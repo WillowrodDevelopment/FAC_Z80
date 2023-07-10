@@ -11,7 +11,7 @@ import Foundation
 
 extension Z80 {
 
-    func fetchAndExecute() {
+    public func fetchAndExecute() {
         let oldPC = PC
         let opCode = next()
         var ts = 4
@@ -386,7 +386,8 @@ extension Z80 {
             }
 
         case 0x76: // halt
-            PC = PC &- 0x01
+            //PC = PC &- 0x01
+            isInHaltState = true
 
         case 0x80...0x87: // add a,r
             let sourceValue = valueFromSource(source: opCode & 0x07)
@@ -586,7 +587,7 @@ extension Z80 {
 
         case 0xD3: // out (n) a
             let port = next()
-            performOut(port: port, value: A)
+            performOut(port: port, map: nil, value: A)
             ts = 11
             memptr = wordFrom(high: A, low: port &+ 1)
 
@@ -643,7 +644,7 @@ extension Z80 {
         case 0xDB: // in a, (n)
             let oldA = UInt16(A) << 8
             let port = next()
-            A = performIn(port: port)
+            A = performIn(port: port, map: nil)
             memptr = oldA &+ UInt16(port) &+ 1
 
         case 0xDC: // call c, nn

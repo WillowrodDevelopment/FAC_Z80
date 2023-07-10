@@ -47,6 +47,6 @@ enum Z80FlagMask: UInt8 {
     sign = 0x80
 }
 
-public enum Z80ProcessorSpeed {
-    case standard, paused, turbo, unrestricted
+public enum Z80ProcessorSpeed: Int {
+    case standard = 50, paused = 1, turbo = 100, unrestricted = 10000
 }

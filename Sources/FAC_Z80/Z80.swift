@@ -8,8 +8,17 @@
 import Foundation
 
 open class Z80 {
+    // **** Delegates ****
+    
+    public var logDelegate: Z80LoggingDelegate?
+    public var controlDelegate: Z80ControlDelegate?
+    
+    
     public var memory: [UInt8] = []
     public var memoryBlocks: [[UInt8]] = []
+    
+    var stack: [UInt16] = []
+    
     // **** Registers ****
     // Flags
     var _F: UInt8 = 0x00
@@ -27,35 +36,36 @@ open class Z80 {
     let initialMasks: (halfCarryMask: UInt8, overflowMask: UInt8, value: UInt8) = (halfCarryMask: 0x00, overflowMask: 0x00, value: 0x00)
 
     // Accumilator
-    var A: UInt8 = 0x00
+    public var A: UInt8 = 0x00
     // Register Pairs
-    var BC: UInt16 = 0x00
-    var DE: UInt16 = 0x00
-    var HL: UInt16 = 0x00
+    public var BC: UInt16 = 0x00
+    public var DE: UInt16 = 0x00
+    public var HL: UInt16 = 0x00
     // Shadow Register Pair
-    var AF2: UInt16 = 0x0
-    var BC2: UInt16 = 0x0
-    var DE2: UInt16 = 0x0
-    var HL2: UInt16 = 0x0
+    public var AF2: UInt16 = 0x0
+    public var BC2: UInt16 = 0x0
+    public var DE2: UInt16 = 0x0
+    public var HL2: UInt16 = 0x0
     // Control Registers
-    var PC: UInt16 = 0x00
-    var SP: UInt16 = 0x00
+    public var PC: UInt16 = 0x00
+    public var SP: UInt16 = 0x00
     // Index Registers
-    var IX: UInt16 = 0x00
-    var IY: UInt16 = 0x00
+    public var IX: UInt16 = 0x00
+    public var IY: UInt16 = 0x00
     // Special Registers
-    var I: UInt8 = 0x00
-    var R: UInt8 = 0x00
+    public var I: UInt8 = 0x00
+    public var R: UInt8 = 0x00
     // Spare Registers
-    var SPARE16: UInt16 = 0x00
-    var SPARE8: UInt8 = 0x00
+    public var SPARE16: UInt16 = 0x00
+    public var SPARE8: UInt8 = 0x00
     
     // **** Control ****
-    let tStatesPerFrame = 69888
-    var tStates = 0
-    var interuptMode: UInt8 = 1
-    var iff1: UInt8 = 0x00
-    var iff2: UInt8 = 0x00
+    public let tStatesPerFrame = 69888
+    public var tStates = 0
+    public var interuptMode: UInt8 = 1
+    public var iff1: UInt8 = 0x00
+    public var iff2: UInt8 = 0x00
+    public var interuptsEnabled: Bool = false
     var runInterup: Bool = false
     var pagingByte: UInt8 = 0
 
@@ -77,9 +87,9 @@ open class Z80 {
     let zero: UInt8 = 0x40
     let sign: UInt8 = 0x80
 
-    var modified53 = false
+    public var modified53 = false
 
-    var memptr: UInt16 = 0x00
+    public var memptr: UInt16 = 0x00
 
     // **** Hardware ****
 
@@ -101,6 +111,8 @@ open class Z80 {
     public var opcodeDebug = false
 
     public var isDebugging = false
+    
+    public var stackSize = 0
 
     
     public init() {
@@ -122,4 +134,22 @@ open class Z80 {
         // Override to handle screen writes
     }
     
+    public func haltInterupts() {
+        iff1 = 0
+        iff2 = 0
+    }
+    
+    open func mCyclesAndTStates(m: Int, t: Int) {
+        tStates += t
+        let bit7 = R & 0x80
+        R = ((R &+ UInt8(m)) & 0x7F) | bit7
+        if tStates >= tStatesPerFrame {
+            tStates = 0
+            render()
+        }
+    }
+    
+    open func preInPerform() {
+        
+    }
 }

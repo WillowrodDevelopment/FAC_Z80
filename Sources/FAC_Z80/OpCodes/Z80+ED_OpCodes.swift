@@ -29,14 +29,14 @@ extension Z80 {
 
         case 0x40:
             let port = C
-            B = performIn(port: port)
+            B = performIn(port: port, map: B)
             let old = UInt16(B) << 8
             memptr = old &+ UInt16(port) &+ 1
             F = preserve(carry) | sz53pv(B)
 
         case 0x41:
             let port = C
-            performOut(port: port, value: B)
+            performOut(port: port, map: B, value: B)
             let old = UInt16(B) << 8
             memptr = old &+ UInt16(port) &+ 1
 
@@ -73,14 +73,14 @@ extension Z80 {
 
         case 0x48:
             let port = C
-            C = performIn(port: port)
+            C = performIn(port: port, map: B)
             let old = UInt16(B) << 8
             memptr = old &+ UInt16(C) &+ 1
             F = preserve(carry) | sz53pv(C)
 
         case 0x49:
             let port = C
-            performOut(port: port, value: C)
+            performOut(port: port, map: B, value: C)
             let old = UInt16(B) << 8
             memptr = old &+ UInt16(port) &+ 1
 
@@ -106,14 +106,14 @@ extension Z80 {
 
         case 0x50:
             let port = C
-            D = performIn(port: port)
+            D = performIn(port: port, map: B)
             let old = UInt16(B) << 8
             memptr = old &+ UInt16(port) &+ 1
             F = preserve(carry) | sz53pv(D)
 
         case 0x51:
             let port = C
-            performOut(port: port, value: D)
+            performOut(port: port, map: B, value: D)
             let old = UInt16(B) << 8
             memptr = old &+ UInt16(port) &+ 1
 
@@ -138,14 +138,14 @@ extension Z80 {
 
         case 0x58:
             let port = C
-            E = performIn(port: port)
+            E = performIn(port: port, map: B)
             let old = UInt16(B) << 8
             memptr = old &+ UInt16(C) &+ 1
             F = preserve(carry) | sz53pv(E)
 
         case 0x59:
             let port = C
-            performOut(port: port, value: E)
+            performOut(port: port, map: B, value: E)
             let old = UInt16(B) << 8
             memptr = old &+ UInt16(port) &+ 1
 
@@ -173,14 +173,14 @@ extension Z80 {
 
         case 0x60:
             let port = C
-            H = performIn(port: port)
+            H = performIn(port: port, map: B)
             let old = UInt16(B) << 8
             memptr = old &+ UInt16(port) &+ 1
             F = preserve(carry) | sz53pv(H)
 
         case 0x61:
             let port = C
-            performOut(port: port, value: H)
+            performOut(port: port, map: B, value: H)
             let old = UInt16(B) << 8
             memptr = old &+ UInt16(port) &+ 1
 
@@ -209,14 +209,14 @@ extension Z80 {
 
         case 0x68:
             let port = C
-            L = performIn(port: port)
+            L = performIn(port: port, map: B)
             let old = UInt16(B) << 8
             memptr = old &+ UInt16(C) &+ 1
             F = preserve(carry) | sz53pv(L)
 
         case 0x69:
             let port = C
-            performOut(port: port, value: L)
+            performOut(port: port, map: B, value: L)
             let old = UInt16(B) << 8
             memptr = old &+ UInt16(port) &+ 1
 
@@ -246,14 +246,14 @@ extension Z80 {
 
         case 0x70: // IN (C)
             let port = C
-            let value = performIn(port: port)
+            let value = performIn(port: port, map: B)
             let old = UInt16(B) << 8
             memptr = old &+ UInt16(port) &+ 1
             F = preserve(carry) | sz53pv(value)
 
         case 0x71: // OUT (C), 0
             let port = C
-            performOut(port: port, value: 0x00)
+            performOut(port: port, map: B, value: 0x00)
 
         case 0x72: // SBC HL,SP
             memptr = HL &+ 1
@@ -268,14 +268,14 @@ extension Z80 {
 
         case 0x78: // IN A, (C)
             let port = C
-            A = performIn(port: port)
+            A = performIn(port: port, map: B)
             let old = UInt16(B) << 8
             memptr = old &+ UInt16(port) &+ 1
             F = preserve(carry) | sz53pv(A)
 
         case 0x79: // OUT (C), A
             let port = C
-            performOut(port: port, value: A)
+            performOut(port: port, map: B, value: A)
             let old = UInt16(B) << 8
             memptr = old &+ UInt16(port) &+ 1
 
@@ -311,7 +311,7 @@ extension Z80 {
             
 
         case 0xA2: // INI
-            let value = performIn(port: C)
+            let value = performIn(port: C, map: B)
             memoryWrite(to: HL, value: value)
             HL.inc()
             memptr = BC &+ 1
@@ -326,7 +326,7 @@ extension Z80 {
 
         case 0xA3: // OUTI
             let value = memoryRead(from: HL)
-            performOut(port: C, value: value)
+            performOut(port: C, map: B, value: value)
             HL.inc()
             dec(.B)
             let bit1: UInt8 = (value & 0x80) >> 6 // copy of bit 7 of transfered value
@@ -359,7 +359,7 @@ extension Z80 {
 
 
         case 0xAA: // IND
-            let value = performIn(port: C)
+            let value = performIn(port: C, map: B)
             memoryWrite(to: HL, value: value)
             HL.dec()
             memptr = BC &- 1
@@ -374,7 +374,7 @@ extension Z80 {
 
         case 0xAB: // OUTD
             let value = memoryRead(from: HL)
-            performOut(port: C, value: value)
+            performOut(port: C, map: B, value: value)
             HL.dec()
             dec(.B)
             let bit1: UInt8 = (value & 0x80) >> 6 // copy of bit 7 of transfered value
@@ -415,7 +415,7 @@ extension Z80 {
 
 
         case 0xB2: // INIR
-            let value = performIn(port: C)
+            let value = performIn(port: C, map: B)
             memoryWrite(to: HL, value: value)
             HL.inc()
             memptr = BC &+ 1
@@ -433,7 +433,7 @@ extension Z80 {
 
         case 0xB3: // OTIR
             let value = memoryRead(from: HL)
-            performOut(port: C, value: value)
+            performOut(port: C, map: B, value: value)
             HL.inc()
             dec(.B)
             let bit1: UInt8 = (value & 0x80) >> 6 // copy of bit 7 of transfered value
@@ -478,7 +478,7 @@ extension Z80 {
 
 
         case 0xBA: // INDR
-            let value = performIn(port: C)
+            let value = performIn(port: C, map: B)
             memoryWrite(to: HL, value: value)
             HL.dec()
             memptr = BC &- 1
@@ -496,7 +496,7 @@ extension Z80 {
 
         case 0xBB: // OTDR
             let value = memoryRead(from: HL)
-            performOut(port: C, value: value)
+            performOut(port: C, map: B, value: value)
             HL.dec()
             dec(.B)
             let bit1: UInt8 = (value & 0x80) >> 6 // copy of bit 7 of transfered value

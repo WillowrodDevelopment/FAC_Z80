@@ -10,7 +10,7 @@ import FAC_Common
 
 extension Z80 {
     
-    var B : UInt8 {
+    public var B : UInt8 {
         get {return BC.highByte()}
         set {
             let low = BC.lowByte()
@@ -18,7 +18,7 @@ extension Z80 {
         }
     }
 
-    var C : UInt8 {
+    public var C : UInt8 {
         get {return BC.lowByte()}
         set {
             let high = UInt16(BC.highByte()) * 256
@@ -26,7 +26,7 @@ extension Z80 {
         }
     }
 
-    var D : UInt8 {
+    public var D : UInt8 {
         get {return DE.highByte()}
         set {
             let low = DE.lowByte()
@@ -34,7 +34,7 @@ extension Z80 {
         }
     }
 
-    var E : UInt8 {
+    public var E : UInt8 {
         get {return DE.lowByte()}
         set {
             let high = UInt16(DE.highByte()) * 256
@@ -42,7 +42,7 @@ extension Z80 {
         }
     }
 
-    var F: UInt8 {
+    public var F: UInt8 {
         get {return _F}
         set {
         //    modified53 = _F & 0x28 != newValue & 0x28
@@ -50,7 +50,7 @@ extension Z80 {
         }
     }
 
-    var H : UInt8 {
+    public var H : UInt8 {
         get {return HL.highByte()}
         set {
             let low = HL.lowByte()
@@ -58,7 +58,7 @@ extension Z80 {
         }
     }
 
-    var L : UInt8 {
+    public var L : UInt8 {
         get {return HL.lowByte()}
         set {
             let high = UInt16(HL.highByte()) * 256
@@ -66,7 +66,7 @@ extension Z80 {
         }
     }
     
-    var AF : UInt16 {
+    public var AF : UInt16 {
         get {
             let high = UInt16(A) * 256
             return UInt16(F) + high
@@ -220,4 +220,60 @@ extension Z80 {
                  A = value
              }
          }
+    
+    public func loadRegisters(a: UInt8,
+                       b: UInt8,
+                       c: UInt8,
+                       d: UInt8,
+                       e: UInt8,
+                       f: UInt8,
+                       h: UInt8,
+                       l: UInt8,
+                       a2: UInt8,
+                       b2: UInt8,
+                       c2: UInt8,
+                       d2: UInt8,
+                       e2: UInt8,
+                       f2: UInt8,
+                       h2: UInt8,
+                       l2: UInt8,
+                       sp: UInt16,
+                       ix: UInt16,
+                       iy: UInt16,
+                       i: UInt8,
+                       r: UInt8,
+                       im: UInt8,
+                       ir1: UInt8,
+                       ir2: UInt8,
+                       pc: UInt16,
+                       shouldReturn: Bool
+    ) {
+        AF = wordFrom(high: a, low: f)
+        BC = wordFrom(high: b, low: c)
+        DE = wordFrom(high: d, low: e)
+        HL = wordFrom(high: h, low: l)
+        
+            AF2 = wordFrom(high: a2, low: f2)
+            BC2 = wordFrom(high: b2, low: c2)
+            DE2 = wordFrom(high: d2, low: e2)
+            HL2 = wordFrom(high: h2, low: l2)
+        
+        SP = sp
+        I = i
+        R = r
+        
+        interuptMode = im
+        iff1 = ir1
+        iff2 = ir2
+        
+        if (shouldReturn) {
+            ret()
+        } else {
+            PC = pc
+        }
+        
+        
+        
+    }
+    
 }

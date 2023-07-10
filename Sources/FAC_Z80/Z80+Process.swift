@@ -15,7 +15,7 @@ extension Z80 {
         while shouldProcess {
             if isInHaltState {
                 mCyclesAndTStates(m: 0, t: 4)
-            } else {
+            } else if processorSpeed != .paused {
                 preProcess()
                 fetchAndExecute()
                 postProcess()
@@ -27,7 +27,7 @@ extension Z80 {
     func render() {
         // To run at 50 FPS we should allow the processor to 'catch up' every frame.
         // TODO: Add clause to run unlimited
-        while frameStarted + 0.02 >= Date().timeIntervalSince1970 {
+        while frameStarted + (1.0 / Double((processorSpeed.rawValue))) >= Date().timeIntervalSince1970 {
         }
         frameStarted = Date().timeIntervalSince1970
         frameCompleted = false

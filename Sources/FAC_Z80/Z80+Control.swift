@@ -11,7 +11,18 @@ extension Z80 {
     // PC and SP Specific
     
     func next() -> UInt8 {
+        let oPC = PC
         let opcode = memoryRead(from: PC)
+//        if stack.count >= 50 {
+//            stack.removeFirst()
+//        }
+//        stack.append(oPC)
+//        if oPC == 0x0008 {
+//            stack.forEach{opcode in
+//                print("\(opcode.hex())")
+//            }
+//            print("Error!")
+//        }
         PC = PC &+ 1
         return opcode
     }
@@ -20,16 +31,6 @@ extension Z80 {
         let low = next()
         let high = next()
         return (UInt16(high) * 256) + UInt16(low)
-    }
-    
-    func mCyclesAndTStates(m: Int, t: Int) {
-        tStates += t
-        let bit7 = R & 0x80
-        R = ((R &+ UInt8(m)) & 0x7F) | bit7
-        if tStates >= tStatesPerFrame {
-            tStates = 0
-            render()
-        }
     }
     
     func previous(value: UInt16 = 1) {
@@ -45,11 +46,20 @@ extension Z80 {
     func push(_ value: UInt16) {
         SP = SP &- 2
         memoryWriteWord(to: SP, value: value)
+//        stack.append(value)
+//        controlDelegate?.updateStack(stack)
     }
     
     func pop() -> UInt16 {
+//        if stackSize == 0 {
+//            logDelegate?.logError("Stack overflow")
+//        } else {
+//            stack.removeLast()
+//            controlDelegate?.updateStack(stack)
+//        }
         let rtn = memoryReadWord(from: SP)
         SP = SP &+ 2
+        stackSize -= 1
         return rtn
     }
     
@@ -63,7 +73,7 @@ extension Z80 {
         memptr = PC
     }
     
-    func resetProcessor() {
+    public func resetProcessor() {
         A = 0x00
         // Register Pairs
         BC = 0x00
@@ -94,5 +104,13 @@ extension Z80 {
         iff2 = 0x00
 
         activeHardwarePorts = [:]
+        updatePort(port: 0xfe, bit: 1, set: false)
+        updatePort(port: 0xfd, bit: 1, set: false)
+        updatePort(port: 0xfb, bit: 1, set: false)
+        updatePort(port: 0xf7, bit: 1, set: false)
+        updatePort(port: 0xef, bit: 1, set: false)
+        updatePort(port: 0xdf, bit: 1, set: false)
+        updatePort(port: 0xbf, bit: 1, set: false)
+        updatePort(port: 0x7f, bit: 1, set: false)
     }
 }
