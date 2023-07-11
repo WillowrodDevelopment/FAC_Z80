@@ -386,7 +386,7 @@ extension Z80 {
             }
 
         case 0x76: // halt
-            //PC = PC &- 0x01
+            PC = PC &- 0x01
             isInHaltState = true
 
         case 0x80...0x87: // add a,r
@@ -644,7 +644,7 @@ extension Z80 {
         case 0xDB: // in a, (n)
             let oldA = UInt16(A) << 8
             let port = next()
-            A = performIn(port: port, map: nil)
+            A = performIn(port: port, map: A)
             memptr = oldA &+ UInt16(port) &+ 1
 
         case 0xDC: // call c, nn

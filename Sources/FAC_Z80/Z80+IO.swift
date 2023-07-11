@@ -15,7 +15,7 @@ extension Z80 {
 //        if port == 0xFE {
 //            //            print(value)
 //            //        }
-            print("portID \(portID): \(value)")
+//            print("portID \(portID): \(value)")
 //        }
        return value
     }
