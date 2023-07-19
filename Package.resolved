@@ -1,0 +1,14 @@
+{
+  "pins" : [
+    {
+      "identity" : "fac_common",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/Willowrod/FAC_Common.git",
+      "state" : {
+        "revision" : "919fa7be3ce9b15a0e1419898b2a35d72508b667",
+        "version" : "0.1.1"
+      }
+    }
+  ],
+  "version" : 2
+}
