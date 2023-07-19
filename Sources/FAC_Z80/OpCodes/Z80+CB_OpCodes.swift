@@ -12,7 +12,7 @@ extension Z80 {
 
 
 
-    func opCodeCB() {
+    func opCodeCB() async {
         let opCode = next()
         let source = opCode & 0x07
         let target = opCode >> 3
@@ -94,6 +94,6 @@ extension Z80 {
         default:
             break
         }
-        mCyclesAndTStates(m: mCycles, t: ts)
+        await mCyclesAndTStates(m: mCycles, t: ts)
     }
 }

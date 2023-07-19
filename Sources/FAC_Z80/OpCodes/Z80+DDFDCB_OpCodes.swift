@@ -9,7 +9,7 @@ import Foundation
 import FAC_Common
 
 extension Z80 {
-    func opCodeDDFDCB(index: Z8016BitRegister) {
+    func opCodeDDFDCB(index: Z8016BitRegister) async {
         let disIndex = displacedIndex(index, displacement: next())
         let opCode = next()
         let source = opCode & 0x07
@@ -125,6 +125,6 @@ ts = 20
         default:
             break
         }
-        mCyclesAndTStates(m: mCycles, t: ts)
+        await mCyclesAndTStates(m: mCycles, t: ts)
     }
     }

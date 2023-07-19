@@ -7,6 +7,8 @@
 
 import Foundation
 
+public let tStatesPerFrame = 69888
+
 open class Z80 {
     // **** Delegates ****
     
@@ -24,6 +26,7 @@ open class Z80 {
     var _F: UInt8 = 0x00
     
     public var fpsValue = 0
+    public var secondsValue = 0
 
     var sz53pvTable: [UInt8] = []
     var sz53Table:   [UInt8] = []
@@ -60,7 +63,7 @@ open class Z80 {
     public var SPARE8: UInt8 = 0x00
     
     // **** Control ****
-    public let tStatesPerFrame = 69888
+    
     public var tStates = 0
     public var interuptMode: UInt8 = 1
     public var iff1: UInt8 = 0x00
@@ -92,8 +95,7 @@ open class Z80 {
     public var memptr: UInt16 = 0x00
 
     // **** Hardware ****
-
-    public var activeHardwarePorts: [String : UInt8] = [:]
+    var hardwarePorts = HardwarePorts()
     
     var frames = 0
     var startTime = Date().timeIntervalSince1970
@@ -115,6 +117,9 @@ open class Z80 {
     public var stackSize = 0
 
     
+    public var iff1Temp: UInt8 = 0x00
+    public var iff2Temp: UInt8 = 0x00
+    
     public init() {
         memory = Array(repeating: 0x00, count: 65536)
         calculateTables()
@@ -125,27 +130,38 @@ open class Z80 {
     open func fps() {
         let seconds = Int(Date().timeIntervalSince1970 - startTime)
         frames += 1
-        if seconds > 0 {
-            fpsValue = frames / seconds
+        if seconds > secondsValue {
+            secondsValue = seconds
+            fpsValue = frames// / seconds
+            frames = 0
         }
     }
     
-    open func display() {
+    open func display() async {
         // Override to handle screen writes
     }
     
     public func haltInterupts() {
+        
+        processorSpeed = .paused
+        iff1Temp = iff1
+        iff2Temp = iff2
         iff1 = 0
         iff2 = 0
     }
     
-    open func mCyclesAndTStates(m: Int, t: Int) {
+    public func resumeInterupts() {
+        iff1 = iff1Temp
+        iff2 = iff2Temp
+    }
+    
+    open func mCyclesAndTStates(m: Int, t: Int) async {
         tStates += t
         let bit7 = R & 0x80
         R = ((R &+ UInt8(m)) & 0x7F) | bit7
         if tStates >= tStatesPerFrame {
             tStates = 0
-            render()
+            await render()
         }
     }
     

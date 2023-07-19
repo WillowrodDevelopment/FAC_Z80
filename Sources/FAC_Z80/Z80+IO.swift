@@ -7,48 +7,33 @@
 
 import Foundation
 
-extension Z80 {
-    func performIn(port: UInt8, map: UInt8? = nil) -> UInt8 {
-        preInPerform()
-        let portID = "\(map?.hex() ?? "7f")\(port.hex())"
-        let value = activeHardwarePorts[portID] ?? 0x00
-//        if port == 0xFE {
-//            //            print(value)
-//            //        }
-//            print("portID \(portID): \(value)")
-//        }
-       return value
+public extension Z80 {
+    func performIn(port: UInt8, map: UInt8? = nil) async -> UInt8 {
+        //preInPerform()
+        return await hardwarePorts.performIn(port: port, map: map)
+    }
+    
+    func performSinglePortIn(port: UInt8) async -> UInt8 {
+        return await hardwarePorts.performSinglePortIn(port: port)
     }
 
-    public func performOut(port: UInt8, map: UInt8? = nil, value: UInt8) {
-        let portID = "\(port.hex())\(map?.hex() ?? "")"
-        activeHardwarePorts[portID] = value
-   //     print("\(portID) -> \(value)")
+    func performOut(port: UInt8, map: UInt8? = nil, value: UInt8) async {
+        await hardwarePorts.performOut(port: port, map: map, value: value)
     }
     
-    public func updatePort(port: UInt8, bit: Int, set: Bool) {
-        let portID = "\(port.hex())fe"
-        var value = activeHardwarePorts[portID] ?? 0xFF
-        value = set ? value.clear(bit: bit) : value.set(bit: bit)
-        activeHardwarePorts[portID] = value
+    func updatePort(port: UInt8, bit: Int, set: Bool) async {
+        await hardwarePorts.updatePort(port: port, bit: bit, set: set)
     }
     
-    public func flipBitOnPort(port: UInt8, bit: Int) {
-        let portID = "\(port.hex())fe"
-        var value = activeHardwarePorts[portID] ?? 0xFF
-        value = value.isSet(bit: bit) ? value.clear(bit: bit) : value.set(bit: bit)
-        activeHardwarePorts[portID] = value
+    func flipBitOnPort(port: UInt8, bit: Int) async {
+        await hardwarePorts.flipBitOnPort(port: port, bit: bit)
     }
     
-    public func updateSinglePort(port: UInt8, bit: Int, set: Bool) {
-        let portID = "\(port.hex())"
-        var value = activeHardwarePorts[portID] ?? 0xFF
-        value = set ? value.clear(bit: bit) : value.set(bit: bit)
-        activeHardwarePorts[portID] = value
+    func updateSinglePort(port: UInt8, bit: Int, set: Bool) async {
+        await hardwarePorts.updateSinglePort(port: port, bit: bit, set: set)
     }
     
-    public func writeSinglePort(port: UInt8, value: UInt8) {
-        let portID = "\(port.hex())"
-        activeHardwarePorts[portID] = value
+    func writeSinglePort(port: UInt8, value: UInt8) async {
+        await hardwarePorts.writeSinglePort(port: port, value: value)
     }
 }

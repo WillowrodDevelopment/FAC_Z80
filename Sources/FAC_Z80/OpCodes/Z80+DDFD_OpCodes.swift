@@ -8,7 +8,7 @@
 import Foundation
 
 extension Z80 {
-    func opCodeDDFD(index: Z8016BitRegister) {
+    func opCodeDDFD(index: Z8016BitRegister) async {
         var ts = 8
         var mCycles = 2
         let indexValue = valueOfIndex(index: index)
@@ -274,7 +274,7 @@ extension Z80 {
             }
 
         case 0xCB: // Index Bit codes
-            opCodeDDFDCB(index: index)
+            await opCodeDDFDCB(index: index)
             ts = 0
             mCycles = 0
 
@@ -304,6 +304,6 @@ extension Z80 {
         default:
             break
         }
-        mCyclesAndTStates(m: mCycles, t: ts)
+        await mCyclesAndTStates(m: mCycles, t: ts)
     }
 }

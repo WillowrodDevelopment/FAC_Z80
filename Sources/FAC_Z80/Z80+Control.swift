@@ -73,7 +73,7 @@ extension Z80 {
         memptr = PC
     }
     
-    public func resetProcessor() {
+    public func resetProcessor() async {
         A = 0x00
         // Register Pairs
         BC = 0x00
@@ -103,14 +103,14 @@ extension Z80 {
         iff1 = 0x00
         iff2 = 0x00
 
-        activeHardwarePorts = [:]
-        updatePort(port: 0xfe, bit: 1, set: false)
-        updatePort(port: 0xfd, bit: 1, set: false)
-        updatePort(port: 0xfb, bit: 1, set: false)
-        updatePort(port: 0xf7, bit: 1, set: false)
-        updatePort(port: 0xef, bit: 1, set: false)
-        updatePort(port: 0xdf, bit: 1, set: false)
-        updatePort(port: 0xbf, bit: 1, set: false)
-        updatePort(port: 0x7f, bit: 1, set: false)
+        await hardwarePorts.reset()
+        await updatePort(port: 0xfe, bit: 1, set: false)
+        await updatePort(port: 0xfd, bit: 1, set: false)
+        await updatePort(port: 0xfb, bit: 1, set: false)
+        await updatePort(port: 0xf7, bit: 1, set: false)
+        await updatePort(port: 0xef, bit: 1, set: false)
+        await updatePort(port: 0xdf, bit: 1, set: false)
+        await updatePort(port: 0xbf, bit: 1, set: false)
+        await updatePort(port: 0x7f, bit: 1, set: false)
     }
 }

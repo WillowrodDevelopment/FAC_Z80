@@ -11,7 +11,7 @@ import Foundation
 
 extension Z80 {
 
-    public func fetchAndExecute() {
+    public func fetchAndExecute() async {
         let oldPC = PC
         let opCode = next()
         var ts = 4
@@ -531,7 +531,7 @@ extension Z80 {
             ts = 10
 
         case 0xCB:
-            opCodeCB()
+            await opCodeCB()
             ts = 0
             mCycles = 0
 
@@ -587,7 +587,7 @@ extension Z80 {
 
         case 0xD3: // out (n) a
             let port = next()
-            performOut(port: port, map: nil, value: A)
+            await performOut(port: port, map: nil, value: A)
             ts = 11
             memptr = wordFrom(high: A, low: port &+ 1)
 
@@ -644,7 +644,7 @@ extension Z80 {
         case 0xDB: // in a, (n)
             let oldA = UInt16(A) << 8
             let port = next()
-            A = performIn(port: port, map: A)
+            A = await performIn(port: port, map: A)
             memptr = oldA &+ UInt16(port) &+ 1
 
         case 0xDC: // call c, nn
@@ -659,7 +659,7 @@ extension Z80 {
             }
 
         case 0xDD: // IX opCodes
-            opCodeDDFD(index: .IX)
+            await opCodeDDFD(index: .IX)
             ts = 0
             mCycles = 0
 
@@ -766,7 +766,7 @@ extension Z80 {
             }
 
         case 0xED: // ED opCodes
-            opCodeED()
+            await opCodeED()
             ts = 0
             mCycles = 0
 
@@ -870,7 +870,7 @@ extension Z80 {
             }
 
         case 0xFD:  // IY opCodes
-            opCodeDDFD(index: .IY)
+            await opCodeDDFD(index: .IY)
             ts = 0
             mCycles = 0
 
@@ -888,7 +888,7 @@ extension Z80 {
         default:
             break
         }
-        mCyclesAndTStates(m: mCycles, t: ts)
+        await mCyclesAndTStates(m: mCycles, t: ts)
         
     }
 }

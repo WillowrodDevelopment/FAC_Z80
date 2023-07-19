@@ -11,34 +11,41 @@ import FAC_Common
 extension Z80 {
     public func process() async {
         shouldProcess = true
-        resetProcessor()
+        await resetProcessor()
         while shouldProcess {
-            if isInHaltState {
-                mCyclesAndTStates(m: 0, t: 4)
-            } else if processorSpeed != .paused {
+            if processorSpeed == .paused {
+                // A small 'hack' to stop the processor freezing when going into a pause state.
+                do{
+                    try await Task.sleep(nanoseconds: UInt64(0.001 * Double(NSEC_PER_SEC)))
+                } catch {
+                    print("Sleep error - \(error.localizedDescription)")
+                }
+            } else {
                 preProcess()
-                fetchAndExecute()
+                await fetchAndExecute()
                 postProcess()
             }
             
         }
+        print("Process complete")
     }
     
-    func render() {
-        // To run at 50 FPS we should allow the processor to 'catch up' every frame.
-        // TODO: Add clause to run unlimited
+    func render() async {
         while frameStarted + (1.0 / Double((processorSpeed.rawValue))) >= Date().timeIntervalSince1970 {
+            // Idle while we wait for frame to catch up
         }
         frameStarted = Date().timeIntervalSince1970
         frameCompleted = false
-        //fps()
-        display()
-        handleInterupt()
+        await display()
+        await handleInterupt()
     }
     
-    private func handleInterupt() {
+    private func handleInterupt() async {
         if iff2 == 1 { // If IFF2 is enabled, run the selected interupt mode
-            
+            if isInHaltState {
+                // The Z80 will only come out of halt if interupts are enabled - to 'fix' this, this halt stop can be moved out of the if statement.
+                PC = PC &+ 0x01
+            }
             push(PC)
             switch interuptMode {
             case 0:
@@ -48,10 +55,6 @@ extension Z80 {
             default:
                 let intAddress = (UInt16(I) * 256) + UInt16(R)
                 PC = memoryReadWord(from: intAddress)
-                if miscDebug {
-                    print("IM2 triggered at \(intAddress.hex()) and processes from \(PC.hex())")
-                }
-                
             }
             isInHaltState = false
         }
@@ -65,5 +68,29 @@ extension Z80 {
         
     }
     
+    
+    
+    public func resume() {
+        print("standard")
+        processorSpeed = .standard
+    }
+    public func pause() {
+            print("paused")
+        processorSpeed = .paused
+    }
+    public func fast() {
+        print("turbo")
+        processorSpeed = .turbo
+    }
+    public func unrestricted() {
+        print("unrestricted")
+        processorSpeed = .unrestricted
+    }
+    public func reboot() {
+        shouldProcess = false
+        Task{
+            await process()
+        }
+    }
 
 }
