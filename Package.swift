@@ -1,4 +1,4 @@
-// swift-tools-version: 5.8
+// swift-tools-version: 5.10
 // The swift-tools-version declares the minimum version of Swift required to build this package.
 
 import PackageDescription
@@ -6,7 +6,7 @@ import PackageDescription
 let package = Package(
     name: "FAC_Z80",
     platforms: [
-        .macOS(.v12),
+        .macOS(.v14),
         .iOS(.v15)
     ],
     products: [
@@ -18,8 +18,8 @@ let package = Package(
     dependencies: [
         // Dependencies declare other packages that this package depends on.
         // .package(url: /* package url */, from: "1.0.0"),
-        .package(url: "https://github.com/Willowrod/FAC_Common.git", from: "0.1.1")
-        //.package(path: "../FAC_Common")
+        //.package(url: "https://github.com/Willowrod/FAC_Common.git", from: "0.1.1")
+        .package(path: "../FAC_Common")
     ],
     targets: [
         // Targets are the basic building blocks of a package. A target can define a module or a test suite.

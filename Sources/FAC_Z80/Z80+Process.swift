@@ -9,20 +9,24 @@ import Foundation
 import FAC_Common
 
 extension Z80 {
-    public func process() async {
+    public func process() {
         shouldProcess = true
-        await resetProcessor()
+        resetProcessor()
         while shouldProcess {
             if processorSpeed == .paused {
-                // A small 'hack' to stop the processor freezing when going into a pause state.
-                do{
-                    try await Task.sleep(nanoseconds: UInt64(0.001 * Double(NSEC_PER_SEC)))
-                } catch {
-                    print("Sleep error - \(error.localizedDescription)")
+  //               A small 'hack' to stop the processor freezing when going into a pause state.
+                Task {
+                    do{
+                        try await Task.sleep(nanoseconds: UInt64(0.001 * Double(NSEC_PER_SEC)))
+                    } catch {
+                        print("Sleep error - \(error.localizedDescription)")
+                    }
                 }
             } else {
                 preProcess()
-                await fetchAndExecute()
+                //Task {
+                 fetchAndExecute() //   await 
+                //}
                 postProcess()
             }
             
@@ -30,17 +34,17 @@ extension Z80 {
         print("Process complete")
     }
     
-    func render() async {
+    func render() {
         while frameStarted + (1.0 / Double((processorSpeed.rawValue))) >= Date().timeIntervalSince1970 {
             // Idle while we wait for frame to catch up
         }
         frameStarted = Date().timeIntervalSince1970
         frameCompleted = false
-        await display()
-        await handleInterupt()
+        display()
+        handleInterupt()
     }
     
-    private func handleInterupt() async {
+    private func handleInterupt() {
         if iff2 == 1 { // If IFF2 is enabled, run the selected interupt mode
             if isInHaltState {
                 // The Z80 will only come out of halt if interupts are enabled - to 'fix' this, this halt stop can be moved out of the if statement.

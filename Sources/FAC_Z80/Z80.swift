@@ -102,7 +102,7 @@ open class Z80 {
 
 // **** Speed Control ****
 
-    public var processorSpeed: Z80ProcessorSpeed = .standard
+    public var processorSpeed: Z80ProcessorSpeed = .unrestricted
 
     // **** Debug ****
 
@@ -121,24 +121,35 @@ open class Z80 {
     public var iff2Temp: UInt8 = 0x00
     
     public init() {
-        memory = Array(repeating: 0x00, count: 65536)
+        memory = Array(repeating: 0x01, count: 65536)
         calculateTables()
+        startProcess()
     }
+     
+    let controller = Z80Controller.shared
     
     // Overrideable functions
+    
+    func startProcess() {
+        Task {
+            await process()
+        }
+    }
     
     open func fps() {
         let seconds = Int(Date().timeIntervalSince1970 - startTime)
         frames += 1
         if seconds > secondsValue {
             secondsValue = seconds
-            fpsValue = frames// / seconds
+            controller.lastSecondValue = frames// / seconds
             frames = 0
+            
         }
     }
     
-    open func display() async {
+    open func display() {
         // Override to handle screen writes
+        fps()
     }
     
     public func haltInterupts() {
@@ -155,17 +166,23 @@ open class Z80 {
         iff2 = iff2Temp
     }
     
-    open func mCyclesAndTStates(m: Int, t: Int) async {
+    open func mCyclesAndTStates(m: Int, t: Int) {
         tStates += t
         let bit7 = R & 0x80
         R = ((R &+ UInt8(m)) & 0x7F) | bit7
         if tStates >= tStatesPerFrame {
             tStates = 0
-            await render()
+            render()
         }
     }
     
     open func preInPerform() {
         
     }
+}
+
+@Observable
+public class Z80Controller {
+    public static let shared = Z80Controller()
+   public var lastSecondValue: Int = 0
 }
