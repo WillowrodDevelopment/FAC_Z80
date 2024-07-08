@@ -35,8 +35,10 @@ extension Z80 {
     }
     
     func render() {
-        while frameStarted + (1.0 / Double((processorSpeed.rawValue))) >= Date().timeIntervalSince1970 {
+  //      print("FS: \(frameStarted + (1.0 / Double(processorSpeed.rawValue))) - Now: \(Date().timeIntervalSince1970) - Speed: \(processorSpeed.rawValue)")
+        while frameStarted + (1.0 / Double(processorSpeed.rawValue)) >= Date().timeIntervalSince1970 {
             // Idle while we wait for frame to catch up
+
         }
         frameStarted = Date().timeIntervalSince1970
         frameCompleted = false
@@ -93,7 +95,7 @@ extension Z80 {
     public func reboot() {
         shouldProcess = false
         Task{
-            await process()
+            startProcess()
         }
     }
 

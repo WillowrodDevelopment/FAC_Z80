@@ -102,7 +102,7 @@ open class Z80 {
 
 // **** Speed Control ****
 
-    public var processorSpeed: Z80ProcessorSpeed = .unrestricted
+    public var processorSpeed: Z80ProcessorSpeed = .standard
 
     // **** Debug ****
 
@@ -123,14 +123,14 @@ open class Z80 {
     public init() {
         memory = Array(repeating: 0x01, count: 65536)
         calculateTables()
-        startProcess()
+    //    startProcess()
     }
      
     let controller = Z80Controller.shared
     
     // Overrideable functions
     
-    func startProcess() {
+    public func startProcess() {
         Task {
             await process()
         }
