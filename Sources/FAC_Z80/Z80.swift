@@ -100,9 +100,6 @@ open class Z80 {
     var frames = 0
     var startTime = Date().timeIntervalSince1970
 
-// **** Speed Control ****
-
-    public var processorSpeed: Z80ProcessorSpeed = .standard
 
     // **** Debug ****
 
@@ -126,7 +123,7 @@ open class Z80 {
     //    startProcess()
     }
      
-    let controller = Z80Controller.shared
+    public let controller = Z80Controller.shared
     
     // Overrideable functions
     
@@ -137,13 +134,18 @@ open class Z80 {
     }
     
     open func fps() {
-        let seconds = Int(Date().timeIntervalSince1970 - startTime)
-        frames += 1
-        if seconds > secondsValue {
-            secondsValue = seconds
-            controller.lastSecondValue = frames// / seconds
-            frames = 0
-            
+        
+        if controller.processorSpeed != .paused {
+            let seconds = Int(Date().timeIntervalSince1970 - startTime)
+            frames += 1
+            if seconds > secondsValue {
+                secondsValue = seconds
+                controller.lastSecondValue = frames// / seconds
+                frames = 0
+                
+            }
+        } else {
+            controller.lastSecondValue = 0
         }
     }
     
@@ -154,7 +156,7 @@ open class Z80 {
     
     public func haltInterupts() {
         
-        processorSpeed = .paused
+        controller.processorSpeed = .paused
         iff1Temp = iff1
         iff2Temp = iff2
         iff1 = 0
@@ -184,5 +186,8 @@ open class Z80 {
 @Observable
 public class Z80Controller {
     public static let shared = Z80Controller()
-   public var lastSecondValue: Int = 0
+    public var lastSecondValue: Int = 0
+    
+    // **** Speed Control ****
+    public var processorSpeed: Z80ProcessorSpeed = .standard
 }
