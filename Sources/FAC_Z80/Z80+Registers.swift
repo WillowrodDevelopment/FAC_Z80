@@ -113,9 +113,9 @@ extension Z80 {
             return L
         case 0x06:
             if let index {
-                return memory[Int(displacedIndex(index, displacement: next()))]
+                return memoryRead(from: displacedIndex(index, displacement: next()))
             }
-            return memory[Int(HL)]
+            return memoryRead(from: HL)
         case 0x07:
             return A
         default:
@@ -214,7 +214,7 @@ extension Z80 {
              case 5:
                  L = value
              case 6:
-                 memory[Int(HL)] = value
+                 memoryWrite(to: HL, value: value)
                  //break
              default:
                  A = value

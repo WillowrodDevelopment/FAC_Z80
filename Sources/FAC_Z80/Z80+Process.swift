@@ -12,6 +12,7 @@ extension Z80 {
     public func process() {
         shouldProcess = true
         resetProcessor()
+        controller.processorSpeed = .standard
         while shouldProcess {
             if controller.processorSpeed == .paused {
   //               A small 'hack' to stop the processor freezing when going into a pause state.
@@ -100,10 +101,14 @@ extension Z80 {
     public func reboot() {
         controller.processorSpeed = .paused
         shouldProcess = false
-        Task{
-            startProcess()
-            controller.processorSpeed = .standard
+       // Task{
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.2) { // Change `2.0` to the desired number of seconds.
+            self.startProcess()
+            // Code you want to be delayed
         }
+            
+            //controller.processorSpeed = .standard
+        //}
     }
 
 }

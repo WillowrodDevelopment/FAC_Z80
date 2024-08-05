@@ -292,7 +292,8 @@ extension Z80 {
 
         case 0x34: // inc (HL)
             let masks = halfCarryOverflowCalculationAdd(value: memoryRead(from: HL), amount: 0x01)
-            memory[Int(HL)] = masks.value
+            // memory[Int(HL)] = masks.value
+            memoryWrite(to: HL, value: masks.value)
             F = (F & carry) | masks.halfCarryMask | masks.overflowMask | sz53(masks.value)
             ts = 11
 
@@ -332,7 +333,7 @@ extension Z80 {
         case 0x3A: // ld A, (nn)
             let target = nextWord()
             memptr = target &+ 1
-            A = memory[target]
+            A = memoryRead(from: target)  //memory[target]
             ts = 11
 
         case 0x3B: // dec SP
@@ -375,7 +376,8 @@ extension Z80 {
             case 0x05:
                 L = sourceValue
             case 0x06:
-                memory[Int(HL)] = sourceValue
+                memoryWrite(to: HL, value: sourceValue)
+           //     memory[Int(HL)] = sourceValue
             case 0x07:
                 A = sourceValue
             default:

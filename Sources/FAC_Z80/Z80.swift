@@ -16,8 +16,14 @@ open class Z80 {
     public var controlDelegate: Z80ControlDelegate?
     
     
-    public var memory: [UInt8] = []
-    public var memoryBlocks: [[UInt8]] = []
+  //  public var memory: [UInt8] = []
+  //  public var memoryBlocks: [[UInt8]] = []
+    
+    public var rom:[[UInt8]] = [[],[]]
+    public var ram:[[UInt8]] = []
+    
+    public var romSelected = 0
+    public var ramSelected = 0
     
     var stack: [UInt16] = []
     
@@ -118,7 +124,7 @@ open class Z80 {
     public var iff2Temp: UInt8 = 0x00
     
     public init() {
-        memory = Array(repeating: 0x01, count: 65536)
+        //memory = Array(repeating: 0x01, count: 65536)
         calculateTables()
     //    startProcess()
     }
@@ -190,4 +196,7 @@ public class Z80Controller {
     
     // **** Speed Control ****
     public var processorSpeed: Z80ProcessorSpeed = .standard
+    
+    public var recordingJumpMap = false
+    public var jumpMap: Set<UInt16> = []
 }
