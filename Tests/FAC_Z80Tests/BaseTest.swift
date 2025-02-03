@@ -15,45 +15,54 @@ class BaseTest: XCTestCase {
     
     let expectation = XCTestExpectation(description: "Open a file asynchronously.")
     let z80 = Z80()
+    let decoder = JSONDecoder()
     override func setUpWithError() throws {
         z80.resetProcessor()
 
     }
 
     func loadJson(_ testID: String) async {
-       // let filename = getPath(forFile: "\(testID).json")
-//        print("Looking for file \(testID).json")
+        //let filename = getPath(forFile: "\(testID).json")
+        let t = type(of: self)
+        let bundle = Bundle(for: t.self)
+        print("testBundle.bundlePath = \(bundle.bundlePath) ")
+        guard
+            let path = Bundle.main.path(forResource: testID, ofType: "json")
+                // let path = bundle.path(forResource: testID, ofType: "json")
+        else {
+            XCTFail("Could not find \(testID)")
+            return
+        }
 //        if let filePath = Bundle.main.path(forResource: testID, ofType: "json") {
-//            print("Is it in \(filePath)?")
-//            do {
-//                guard let disassembly = FileManager.default.contents(atPath: filePath) else {
-//                    print("Failed to read data")
-//                    return []
-//                }
-//                let json = try JSONDecoder().decode([TestModel].self, from: disassembly) //JSONEncoder().encode(self)
-//
-//                return json
-//            } catch {
-//                print("Something bad happened.... \(error.localizedDescription)")
-//            }
+            print("\(testID).json found in \(path)?")
+            do {
+                guard let data = try? Data(contentsOf: URL(string: path)!) else {
+                    print("Failed to read data")
+                    return
+                }
+                let json = try JSONDecoder().decode([TestModel].self, from: data) //JSONEncoder().encode(self)
+                await executeTest(json)
+                
+            } catch {
+                print("Something bad happened.... \(error.localizedDescription)")
+            }
 //        } else {
 //            XCTFail("Could not find \(testID).json")
 //        }
-        let myURL = "https://smart.competencycloud.co.uk/mobileAppInsecure.htm?op=smartCheck&fname=Daryl&lname=Thomson&dateofbirth=1989-07-09&nationalinsurancenumber=JW515886C&citbNumber=2732540&citbNumber2&nocnNumber&nporsNumber&eusrNumber&nhssNumber&ccdoNumber"
-        if let url = URL(string: "\(baseURL)\(testID).json"){
-                do {
-                    print("URL: \(url.absoluteString)")
-                    let (data, _) = try await URLSession.shared.data(from: url)
-                    let decoder = JSONDecoder()
-                    let model = try decoder.decode([TestModel].self, from: data)
-                    await executeTest(model)
-                } catch {
-                    print("Error processing test \(testID): \(error.localizedDescription)")
-                }
-           // return try decoder.decode([TestModel].self, from: data)
-        } else {
-            XCTFail("Could not find \(testID).json")
-        }
+//        if let url = URL(string: "\(baseURL)\(testID).json"){
+//                do {
+//                    print("URL: \(url.absoluteString)")
+//                    let (data, _) = try await URLSession.shared.data(from: url)
+//                    let decoder = JSONDecoder()
+//                    let model = try decoder.decode([TestModel].self, from: data)
+//                    await executeTest(model)
+//                } catch {
+//                    print("Error processing test \(testID): \(error.localizedDescription)")
+//                }
+//           // return try decoder.decode([TestModel].self, from: data)
+//        } else {
+//            XCTFail("Could not find \(testID).json")
+//        }
         
        // return []
     }
@@ -187,15 +196,17 @@ class BaseTest: XCTestCase {
             ports.forEach { port in
                 if port[2].fetchString() == "w" {
                     let targetPort = port[0].fetchUInt16().lowByte()
-                    z80.activeHardwarePorts[String(targetPort)] = port[1].fetchUInt8()
+                    z80.hardwarePorts.writeSinglePort(port: targetPort, value: port[1].fetchUInt8())   //activeHardwarePorts[String(targetPort)] = port[1].fetchUInt8()
                 }
             }
         }
 
         state.ram.forEach { item in
-            XCTAssert(z80.memory[item[0]] == UInt8(item[1]))
-            if z80.memory[item[0]] != UInt8(item[1]) {
-                print("Mem at \(item[0]) should be \(item[1]) but is \(z80.memory[item[0]])")
+            let ramAddress = item[0]
+            let ramValue = item[1]
+            XCTAssert(z80.ram[0][ramAddress] == UInt8(ramValue))
+            if z80.ram[0][item[0]] != UInt8(item[1]) {
+                print("Mem at \(item[0]) should be \(item[1]) but is \(z80.ram[item[0]])")
             }
         }
 
@@ -230,17 +241,21 @@ class BaseTest: XCTestCase {
 
         z80.memptr = state.wz
 
-        z80.activeHardwarePorts = [:]
         if let ports {
             ports.forEach { port in
                 if port[2].fetchString() == "r" {
                     let targetPort = port[0].fetchUInt16()
-                    z80.activeHardwarePorts[targetPort.hex()] = port[1].fetchUInt8()
+                    
+                    z80.hardwarePorts.writeSinglePort(port: UInt8(targetPort), value: port[1].fetchUInt8())
+                    //z80.activeHardwarePorts[targetPort.hex()] = port[1].fetchUInt8()
                 }
             }
         }
         state.ram.forEach { item in
-            z80.memory[item[0]] = UInt8(item[1])
+            let ramAddress = item[0]
+            let ramValue = item[1]
+            z80.ram[0][ramAddress] = UInt8(ramValue)
+            //z80.memory[item[0]] = UInt8(item[1])
         }
 
 

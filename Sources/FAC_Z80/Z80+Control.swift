@@ -42,7 +42,10 @@ extension Z80 {
         PC = jump
         memptr = PC
         if controller.recordingJumpMap && jump > 0x4000 {
-            controller.jumpMap.insert(jump)
+            if !controller.jumpMap.contains(jump){
+                loggingService.log("New jump: \(jump) - \(jump.hex())")
+                controller.jumpMap.insert(jump)
+            }
         }
     }
     
@@ -75,11 +78,15 @@ extension Z80 {
         PC = target
         memptr = PC
         if controller.recordingJumpMap && target > 0x4000 {
-            controller.jumpMap.insert(target)
+            if !controller.jumpMap.contains(target){
+                loggingService.log("New target: \(target) - \(target.hex())")
+                controller.jumpMap.insert(target)
+            }
         }
     }
     
     public func resetProcessor() {
+        pause()
         A = 0x00
         // Register Pairs
         BC = 0x00
@@ -119,5 +126,9 @@ extension Z80 {
              updatePort(port: 0xbf, bit: 1, set: false)
              updatePort(port: 0x7f, bit: 1, set: false)
   
+        
+        
+        standard()
+        
     }
 }

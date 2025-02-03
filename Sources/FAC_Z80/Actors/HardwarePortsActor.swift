@@ -7,7 +7,7 @@
 
 import Foundation
 
-class HardwarePorts {
+public class HardwarePorts {
     private var activeHardwarePorts: [String : UInt8] = [:]
     
     func reset()  {

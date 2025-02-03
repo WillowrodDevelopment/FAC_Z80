@@ -12,7 +12,7 @@ extension Z80 {
     public func process() {
         shouldProcess = true
         resetProcessor()
-        controller.processorSpeed = .standard
+        standard()
         while shouldProcess {
             if controller.processorSpeed == .paused {
   //               A small 'hack' to stop the processor freezing when going into a pause state.
@@ -38,7 +38,6 @@ extension Z80 {
     }
     
     func render() {
- //       print("FS: \(frameStarted + (1.0 / Double(processorSpeed.rawValue))) - Now: \(Date().timeIntervalSince1970) - Speed: \(processorSpeed.rawValue)")
         if controller.processorSpeed != .paused {
             while frameStarted + (1.0 / Double(controller.processorSpeed.rawValue)) >= Date().timeIntervalSince1970 {
                 // Idle while we wait for frame to catch up
@@ -47,8 +46,15 @@ extension Z80 {
             frameStarted = Date().timeIntervalSince1970
             frameCompleted = false
         }
-        display()
+    //    if controller.processorSpeed != .unrestricted {
+            display()
+     //   }
         handleInterupt()
+        if loggingService.isLoggingProcessor {
+                   loggingService.logProcessor(message: lastPCValues.map{"\($0)"}.joined(separator: "-"))
+                   lastPCValues.removeAll()
+        }
+   
     }
     
     private func handleInterupt() {
@@ -74,41 +80,58 @@ extension Z80 {
     }
     
     func preProcess() {
+        if PC >= 0xF66C && PC <= 0xF68E {
+            loggingService.log("Reading: \(PC.hex())")
+        }
     }
     
     func postProcess() {
         
     }
     
-    
+    public func standard() {
+        resume()
+    }
     
     public func resume() {
         print("standard")
+        invalidateTimer()
         controller.processorSpeed = .standard
     }
     public func pause() {
             print("paused")
+        invalidateTimer()
         controller.processorSpeed = .paused
     }
     public func fast() {
         print("turbo")
+        invalidateTimer()
         controller.processorSpeed = .turbo
     }
+    
     public func unrestricted() {
         print("unrestricted")
+        invalidateTimer()
+        displayTimer = Timer.scheduledTimer(timeInterval: 0.1, target: self, selector: #selector(fireTimer), userInfo: nil, repeats: true)
+        displayTimer?.fire()
         controller.processorSpeed = .unrestricted
     }
+    
+    func invalidateTimer() {
+        displayTimer?.invalidate()
+        displayTimer = nil
+    }
+    
+    @objc func fireTimer() {
+     //   display()
+    }
+    
     public func reboot() {
-        controller.processorSpeed = .paused
+        pause()
         shouldProcess = false
-       // Task{
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.2) { // Change `2.0` to the desired number of seconds.
             self.startProcess()
-            // Code you want to be delayed
         }
-            
-            //controller.processorSpeed = .standard
-        //}
     }
 
 }

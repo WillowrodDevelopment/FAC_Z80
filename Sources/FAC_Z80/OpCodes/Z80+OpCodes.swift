@@ -8,11 +8,16 @@
 // TODO: 0x76 - Halt command not implemented
 
 import Foundation
+import FAC_Common
 
 extension Z80 {
 
     public func fetchAndExecute() {
         let oldPC = PC
+        if loggingService.isLoggingProcessor {
+            lastPCValues.append(oldPC)
+        }
+
         let opCode = next()
         var ts = 4
         var mCycles = 1
@@ -891,6 +896,8 @@ extension Z80 {
             break
         }
         mCyclesAndTStates(m: mCycles, t: ts)
-        
+       // Task {
+       //     LoggingService.shared.logProcessor(oldPC, opcode: opCode.hex(), message: nil)
+      //  }
     }
 }

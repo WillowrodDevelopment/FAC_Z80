@@ -28,6 +28,14 @@ extension Z80 {
             ram[ramSelected][Int(to - 0xC000)] = value
         }
     }
+    
+    public func get48kMemory() -> [UInt8] {
+        var myRam = rom[0]
+        myRam.append(contentsOf: ram[5])
+        myRam.append(contentsOf: ram[2])
+        myRam.append(contentsOf: ram[ramSelected])
+        return myRam
+    }
 
     func memoryRead(from: UInt16) -> UInt8 {
         switch from {
@@ -54,6 +62,12 @@ extension Z80 {
         let low = memoryRead(from: from)  //memory[Int(from)]
         let high = memoryRead(from: (from &+ 1)) //memory[Int(from &+ 1)]
         return (UInt16(high) * 256) + UInt16(low)
+    }
+    
+    func resetMemory() {
+        ramSelected = 0
+        romSelected = 0
+        ram = Array(repeating: Array(repeating: 0, count: 0x4000), count: 8)
     }
     
     
