@@ -9,7 +9,7 @@ import Foundation
 import FAC_Common
 
 extension Z80 {
-    public func memoryWrite(to: UInt16, value: UInt8) {
+    func internalMemoryWrite(to: UInt16, value: UInt8) {
         // Should protect ROM for Sinclair computers
         switch to {
         case ...0x3FFF:
@@ -37,7 +37,7 @@ extension Z80 {
         return myRam
     }
 
-    func memoryRead(from: UInt16) -> UInt8 {
+    func internalMemoryRead(from: UInt16) -> UInt8 {
         switch from {
         case ...0x3FFF:
             return rom[romSelected][Int(from)]

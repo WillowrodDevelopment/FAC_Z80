@@ -60,10 +60,7 @@ extension Z80 {
     private func handleInterupt() {
         if controller.processorSpeed != .paused {
             if iff2 == 1 { // If IFF2 is enabled, run the selected interupt mode
-                if isInHaltState {
-                    // The Z80 will only come out of halt if interupts are enabled - to 'fix' this, this halt stop can be moved out of the if statement.
-                    PC = PC &+ 0x01
-                }
+                isInHaltState = false
                 push(PC)
                 switch interuptMode {
                 case 0:
@@ -74,7 +71,6 @@ extension Z80 {
                     let intAddress = (UInt16(I) * 256) + UInt16(R)
                     PC = memoryReadWord(from: intAddress)
                 }
-                isInHaltState = false
             }
         }
     }

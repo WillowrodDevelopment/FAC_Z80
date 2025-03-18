@@ -13,6 +13,10 @@ import FAC_Common
 extension Z80 {
 
     public func fetchAndExecute() {
+        if isInHaltState {
+            mCyclesAndTStates(m: 1, t: 10)
+            return
+        }
         let oldPC = PC
         if loggingService.isLoggingProcessor {
             lastPCValues.append(oldPC)
@@ -314,7 +318,7 @@ extension Z80 {
 
         case 0x37: // scf
             let preserved = preserve(sign, zero, parityOverflow)
-            let fiveThree = modified53 ? F & 0x28 : A & 0x28
+            let fiveThree = A & 0x28 //modified53 ? F & 0x28 :
             F = preserved | carry | fiveThree
             break
 
@@ -393,7 +397,7 @@ extension Z80 {
             }
 
         case 0x76: // halt
-            PC = PC &- 0x01
+            //PC = PC &- 0x01
             isInHaltState = true
 
         case 0x80...0x87: // add a,r

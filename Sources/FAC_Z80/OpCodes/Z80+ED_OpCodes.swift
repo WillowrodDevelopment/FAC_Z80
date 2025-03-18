@@ -51,12 +51,12 @@ extension Z80 {
             memoryWriteWord(to: address, value: BC)
             memptr = address &+ 1
 
-        case 0x44: // NEG
+        case 0x44, 0x4C, 0x54, 0x5C, 0x64, 0x6c, 0x74, 0x7c: // NEG
             let masks = carryHalfCarryOverflowCalculationSub(value: 0x00, amount: A)
             A = masks.value
             F = negative | sz53(A) | masks.carryMask | masks.halfCarryMask | masks.overflowMask
 
-        case 0x45: // RETN
+        case 0x45, 0x4D, 0x55, 0x5D, 0x65, 0x6D, 0x75, 0x7D: // RETN
             PC = pop()
             iff1 = iff2
             memptr = PC
@@ -94,11 +94,6 @@ extension Z80 {
             let address = nextWord()
             BC = memoryReadWord(from: address)
             memptr = address &+ 1
-
-        case 0x4D: // RETI
-            PC = pop()
-            iff1 = iff2
-            memptr = PC
 
         case 0x4F: // LD R, A
             R = A
@@ -318,7 +313,7 @@ extension Z80 {
             dec(.B)
             let bit1: UInt8 = (value & 0x80) >> 6 // copy of bit 7 of transfered value
             let calculation: UInt8 = value &+ C &+ 1
-            let bits0And4: UInt8 = (calculation > value ? 0x00 : 0x11) // If overflows
+            let bits0And4: UInt8 = (calculation >= value ? 0x00 : 0x11) // If overflows
             let parityCalculation: UInt8 = (calculation & 0x07) ^ B
             let bit2: UInt8 = parityBit[parityCalculation]
             F = sz53(B) | bits0And4 | bit1 | bit2
@@ -422,8 +417,9 @@ extension Z80 {
             dec(.B)
             let bit1: UInt8 = (value & 0x80) >> 6 // copy of bit 7 of transfered value
             let calculation: UInt8 = value &+ C &+ 1
-            let bits0And4: UInt8 = (calculation > value ? 0x00 : 0x11) // If overflows
-            let parityCalculation: UInt8 = (calculation & 0x07) ^ B
+            let calcUInt16: UInt16 = UInt16(value) + ((UInt16(C) + 1) & 0xFF)
+            let bits0And4: UInt8 = (calcUInt16 > 0xFF ? 0x11 : 0x00) // If overflows
+            let parityCalculation: UInt8 = UInt8(calcUInt16 & 0x07) ^ B
             let bit2: UInt8 = parityBit[parityCalculation]
             F = sz53(B) | bits0And4 | bit1 | bit2
             if B != 0 {

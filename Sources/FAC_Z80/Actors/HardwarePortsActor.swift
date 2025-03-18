@@ -57,4 +57,9 @@ public class HardwarePorts {
         activeHardwarePorts[portID] = value
     }
     
+    public func writeSinglePort(port: UInt16, value: UInt8)  {
+        let portID = "\(port.hex())"
+        activeHardwarePorts[portID] = value
+    }
+    
 }

@@ -21,7 +21,7 @@ open class Z80 {
   //  public var memoryBlocks: [[UInt8]] = []
     
     public var rom:[[UInt8]] = [[],[]]
-    public var ram:[[UInt8]] = []
+    public var ram:[[UInt8]] = [[]]
     
     public var romSelected = 0
     public var ramSelected = 0
@@ -86,7 +86,7 @@ open class Z80 {
     var frameCompleted = false
     var frameStarted: TimeInterval = Date().timeIntervalSince1970
     
-    var isInHaltState = false
+    public var isInHaltState = false
     
     // **** Flag Masks ****
     
@@ -99,7 +99,7 @@ open class Z80 {
     let zero: UInt8 = 0x40
     let sign: UInt8 = 0x80
 
-    public var modified53 = false
+    public var modified53 = true
 
     public var memptr: UInt16 = 0x00
 
@@ -194,6 +194,17 @@ open class Z80 {
     open func preInPerform() {
         
     }
+    
+    open func memoryWrite(to: UInt16, value: UInt8) {
+        internalMemoryWrite(to: to, value: value)
+    }
+    
+
+    open func memoryRead(from: UInt16) -> UInt8 {
+        internalMemoryRead(from: from)
+    }
+    
+    
 }
 
 @Observable
