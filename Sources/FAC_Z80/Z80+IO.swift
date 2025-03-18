@@ -9,7 +9,6 @@ import Foundation
 
 public extension Z80 {
     func performIn(port: UInt8, map: UInt8? = nil) -> UInt8 {
-        //preInPerform()
         return hardwarePorts.performIn(port: port, map: map)
     }
     

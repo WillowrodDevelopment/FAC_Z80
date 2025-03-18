@@ -7,7 +7,7 @@
 
 import Foundation
 
-class HardwarePorts {
+public class HardwarePorts {
     private var activeHardwarePorts: [String : UInt8] = [:]
     
     func reset()  {
@@ -53,6 +53,11 @@ class HardwarePorts {
     }
     
     public func writeSinglePort(port: UInt8, value: UInt8)  {
+        let portID = "\(port.hex())"
+        activeHardwarePorts[portID] = value
+    }
+    
+    public func writeSinglePort(port: UInt16, value: UInt8)  {
         let portID = "\(port.hex())"
         activeHardwarePorts[portID] = value
     }

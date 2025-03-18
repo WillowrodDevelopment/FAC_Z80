@@ -6,6 +6,7 @@
 //
 
 import Foundation
+import FAC_Common
 
 public let tStatesPerFrame = 69888
 
@@ -20,7 +21,7 @@ open class Z80 {
   //  public var memoryBlocks: [[UInt8]] = []
     
     public var rom:[[UInt8]] = [[],[]]
-    public var ram:[[UInt8]] = []
+    public var ram:[[UInt8]] = [[]]
     
     public var romSelected = 0
     public var ramSelected = 0
@@ -33,6 +34,8 @@ open class Z80 {
     
     public var fpsValue = 0
     public var secondsValue = 0
+    
+    var displayTimer: Timer?
 
     var sz53pvTable: [UInt8] = []
     var sz53Table:   [UInt8] = []
@@ -83,7 +86,7 @@ open class Z80 {
     var frameCompleted = false
     var frameStarted: TimeInterval = Date().timeIntervalSince1970
     
-    var isInHaltState = false
+    public var isInHaltState = false
     
     // **** Flag Masks ****
     
@@ -96,12 +99,12 @@ open class Z80 {
     let zero: UInt8 = 0x40
     let sign: UInt8 = 0x80
 
-    public var modified53 = false
+    public var modified53 = true
 
     public var memptr: UInt16 = 0x00
 
     // **** Hardware ****
-    var hardwarePorts = HardwarePorts()
+    public var hardwarePorts = HardwarePorts()
     
     var frames = 0
     var startTime = Date().timeIntervalSince1970
@@ -123,6 +126,8 @@ open class Z80 {
     public var iff1Temp: UInt8 = 0x00
     public var iff2Temp: UInt8 = 0x00
     
+    let loggingService = LoggingService.shared
+    
     public init() {
         //memory = Array(repeating: 0x01, count: 65536)
         calculateTables()
@@ -132,6 +137,8 @@ open class Z80 {
     public let controller = Z80Controller.shared
     
     // Overrideable functions
+    
+    public var lastPCValues: [UInt16] = []
     
     public func startProcess() {
         Task {
@@ -162,7 +169,7 @@ open class Z80 {
     
     public func haltInterupts() {
         
-        controller.processorSpeed = .paused
+        pause()
         iff1Temp = iff1
         iff2Temp = iff2
         iff1 = 0
@@ -187,6 +194,17 @@ open class Z80 {
     open func preInPerform() {
         
     }
+    
+    open func memoryWrite(to: UInt16, value: UInt8) {
+        internalMemoryWrite(to: to, value: value)
+    }
+    
+
+    open func memoryRead(from: UInt16) -> UInt8 {
+        internalMemoryRead(from: from)
+    }
+    
+    
 }
 
 @Observable
@@ -199,4 +217,5 @@ public class Z80Controller {
     
     public var recordingJumpMap = false
     public var jumpMap: Set<UInt16> = []
+    public var showingSettings = false
 }
