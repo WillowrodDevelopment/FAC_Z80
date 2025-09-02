@@ -41,12 +41,7 @@ extension Z80 {
         let jump = PC &+ UInt16(twos & 0x7f) &- UInt16(twos & 0x80)
         PC = jump
         memptr = PC
-        if controller.recordingJumpMap && jump > 0x4000 {
-            if !controller.jumpMap.contains(jump){
-                loggingService.log("New jump: \(jump) - \(jump.hex())")
-                controller.jumpMap.insert(jump)
-            }
-        }
+        controller.memoryMap?.recordJump(jump)
     }
     
     func push(_ value: UInt16) {
@@ -77,12 +72,13 @@ extension Z80 {
     func jump(_ target: UInt16) {
         PC = target
         memptr = PC
-        if controller.recordingJumpMap && target > 0x4000 {
-            if !controller.jumpMap.contains(target){
-                loggingService.log("New target: \(target) - \(target.hex())")
-                controller.jumpMap.insert(target)
-            }
-        }
+        controller.memoryMap?.recordJump(target)
+//        if controller.recordingJumpMap && target > 0x4000 {
+//            if !controller.jumpMap.contains(target){
+//                loggingService.log("New target: \(target) - \(target.hex())")
+//                controller.jumpMap.insert(target)
+//            }
+//        }
     }
     
     public func resetProcessor() {

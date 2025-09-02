@@ -145,10 +145,13 @@ extension Z80 {
             PC = value
         case .SP:
              SP = value
+            controller.memoryMap?.recordStack(value)
         case .IX:
              IX = value
+            controller.memoryMap?.recordIxy(value)
         case .IY:
              IY = value
+            controller.memoryMap?.recordIxy(value)
         case .SPARE:
              SPARE16 = value
         }

@@ -50,10 +50,10 @@ extension Z80 {
             display()
      //   }
         handleInterupt()
-        if loggingService.isLoggingProcessor {
-                   loggingService.logProcessor(message: lastPCValues.map{"\($0)"}.joined(separator: "-"))
-                   lastPCValues.removeAll()
-        }
+//        if loggingService.isLoggingProcessor {
+//                   loggingService.logProcessor(message: lastPCValues.map{"\($0)"}.joined(separator: "-"))
+//                   lastPCValues.removeAll()
+//        }
    
     }
     
@@ -76,9 +76,9 @@ extension Z80 {
     }
     
     func preProcess() {
-        if PC >= 0xF66C && PC <= 0xF68E {
-            loggingService.log("Reading: \(PC.hex())")
-        }
+//        if PC >= 0xF66C && PC <= 0xF68E {
+//            loggingService.log("Reading: \(PC.hex())")
+//        }
     }
     
     func postProcess() {

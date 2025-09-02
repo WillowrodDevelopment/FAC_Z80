@@ -21,9 +21,13 @@ public class HardwarePorts {
     }
     
     func performSinglePortIn(port: UInt8)  -> UInt8 {
-        let portID = "\(port.hex())"
-        let value = activeHardwarePorts[portID] ?? 0x00
-        return value
+        do {
+            let portID = "\(port.hex())"
+            let value = activeHardwarePorts[portID] ?? 0x00
+            return value } catch {
+                print(error)
+                return 0x00
+            }
     }
 
     public func performOut(port: UInt8, map: UInt8? = nil, value: UInt8)  {

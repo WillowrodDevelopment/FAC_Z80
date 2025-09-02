@@ -16,10 +16,6 @@ open class Z80 {
     public var logDelegate: Z80LoggingDelegate?
     public var controlDelegate: Z80ControlDelegate?
     
-    
-  //  public var memory: [UInt8] = []
-  //  public var memoryBlocks: [[UInt8]] = []
-    
     public var rom:[[UInt8]] = [[],[]]
     public var ram:[[UInt8]] = [[]]
     
@@ -215,7 +211,72 @@ public class Z80Controller {
     // **** Speed Control ****
     public var processorSpeed: Z80ProcessorSpeed = .standard
     
-    public var recordingJumpMap = false
-    public var jumpMap: Set<UInt16> = []
+    public var memoryMap: Z80MemoryMap? = nil
+    public var storedMemoryMap: Z80MemoryMap? = nil
+    
     public var showingSettings = false
+    
+    func setJumpMapActive() {
+        memoryMap = Z80MemoryMap()
+    }
+    
+    func setJumpMapInactive() {
+        storedMemoryMap = memoryMap
+        memoryMap = nil
+    }
+    
+    public func toggleJumpMap() {
+        if let memoryMap {
+            setJumpMapInactive()
+        } else {
+            setJumpMapActive()
+        }
+    }
+}
+
+@Observable
+public class Z80MemoryMap {
+    public var jumpMap: Set<UInt16> = []
+    public var dataMap: Set<UInt16> = []
+    public var ixyMap: Set<UInt16> = []
+    public var stackMap: Set<UInt16> = []
+    public var showingSettings = false
+    
+    public func recordJump(_ jump: UInt16) {
+        if jump > 0x4000 {
+            if jumpMap.contains(jump) {
+                return
+            }
+                jumpMap.insert(jump)
+        }
+    }
+    
+    public func recordIxy(_ data: UInt16) {
+        if data > 0x4000 {
+            if ixyMap.contains(data) {
+                return
+            }
+            print("Record Ixy: \(data)")
+                ixyMap.insert(data)
+        }
+    }
+    
+    public func recordData(_ data: UInt16) {
+        if data > 0x4000 {
+            if dataMap.contains(data) {
+                return
+            }
+            print("Record Data: \(data)")
+                dataMap.insert(data)
+        }
+    }
+    
+    public func recordStack(_ data: UInt16) {
+        if data > 0x4000 {
+            if stackMap.contains(data) {
+                return
+            }
+                stackMap.insert(data)
+        }
+    }
 }

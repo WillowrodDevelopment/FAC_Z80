@@ -18,9 +18,9 @@ extension Z80 {
             return
         }
         let oldPC = PC
-        if loggingService.isLoggingProcessor {
-            lastPCValues.append(oldPC)
-        }
+//        if loggingService.isLoggingProcessor {
+//            lastPCValues.append(oldPC)
+//        }
 
         let opCode = next()
         var ts = 4
@@ -187,6 +187,7 @@ extension Z80 {
             memoryWriteWord(to: target, value: HL)
             memptr = target &+ 1
             ts = 16
+            controller.memoryMap?.recordData(target)
 
         case 0x23: // inc hl
             HL.inc()
@@ -257,6 +258,7 @@ extension Z80 {
             HL = memoryReadWord(from: address)
             memptr = address &+ 1
             ts += 16
+            controller.memoryMap?.recordData(address)
 
         case 0x2B: // dec hl
             HL.dec()
@@ -294,6 +296,7 @@ extension Z80 {
             memoryWrite(to: target, value: A)
             memptr = wordFrom(high: A, low: (target.lowByte() &+ 1))
             ts += 9
+            controller.memoryMap?.recordData(target)
 
         case 0x33: // inc SP
             SP.inc()
@@ -344,6 +347,7 @@ extension Z80 {
             memptr = target &+ 1
             A = memoryRead(from: target)  //memory[target]
             ts = 11
+            controller.memoryMap?.recordData(target)
 
         case 0x3B: // dec SP
             SP.dec()
