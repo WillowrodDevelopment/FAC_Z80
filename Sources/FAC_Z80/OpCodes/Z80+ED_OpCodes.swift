@@ -8,10 +8,10 @@
 import Foundation
 
 extension Z80 {
-    func opCodeED() {
+    func opCodeED() async {
         var ts = 4
         var mCycles = 2
-        let opCode = next()
+        let opCode = await next()
         switch opCode {
         case 0x00...0x3f: // Z180 only
 //            let code = opCode & 0x07
@@ -47,8 +47,8 @@ extension Z80 {
             F = masks.halfCarryMask | masks.overflowMask | masks.carryMask | (sz53(HL.highByte()) & 0xA8) | negative | (HL == 0 ? 0x40 : 0x00)
 
         case 0x43: // LD (nn), BC
-            let address = nextWord()
-            memoryWriteWord(to: address, value: BC)
+            let address = await nextWord()
+            await memory.writeWord(to: address, value: BC)
             memptr = address &+ 1
 
         case 0x44, 0x4C, 0x54, 0x5C, 0x64, 0x6c, 0x74, 0x7c: // NEG
@@ -57,7 +57,7 @@ extension Z80 {
             F = negative | sz53(A) | masks.carryMask | masks.halfCarryMask | masks.overflowMask
 
         case 0x45, 0x4D, 0x55, 0x5D, 0x65, 0x6D, 0x75, 0x7D: // RETN
-            PC = pop()
+            PC = await pop()
             iff1 = iff2
             memptr = PC
 
@@ -91,8 +91,8 @@ extension Z80 {
             F = masks.halfCarryMask | masks.overflowMask | masks.carryMask | (sz53(HL.highByte()) & 0xA8) | (HL == 0 ? 0x40 : 0x00)
 
         case 0x4B: // LD BC, (nn)
-            let address = nextWord()
-            BC = memoryReadWord(from: address)
+            let address = await nextWord()
+            BC = await memory.readWord(from: address)
             memptr = address &+ 1
 
         case 0x4F: // LD R, A
@@ -119,8 +119,8 @@ extension Z80 {
             F = masks.halfCarryMask | masks.overflowMask | masks.carryMask | (sz53(HL.highByte()) & 0xA8) | negative | (HL == 0 ? 0x50 : 0x00)
 
         case 0x53: // LD (nn), DE
-            let address = nextWord()
-            memoryWriteWord(to: address, value: DE)
+            let address = await nextWord()
+            await memory.writeWord(to: address, value: DE)
             memptr = address &+ 1
 
         case 0x56: // IM 1
@@ -151,8 +151,8 @@ extension Z80 {
             F = masks.halfCarryMask | masks.overflowMask | masks.carryMask | (sz53(HL.highByte()) & 0xA8) | (HL == 0 ? 0x50 : 0x00)
 
         case 0x5B: // LD DE, (nn)
-            let address = nextWord()
-            DE = memoryReadWord(from: address)
+            let address = await nextWord()
+            DE = await memory.readWord(from: address)
             memptr = address &+ 1
 
         case 0x5E: // IM 2
@@ -186,19 +186,19 @@ extension Z80 {
             F = masks.halfCarryMask | masks.overflowMask | masks.carryMask | sz53(HL.highByte()) | negative
 
         case 0x63: // LD (nn), HL
-            let address = nextWord()
-            memoryWriteWord(to: address, value: HL)
+            let address = await nextWord()
+            await memory.writeWord(to: address, value: HL)
             memptr = address &+ 1
 
         case 0x67: // RRD
 
         let part1 = A & 0xF0
         let part2 = (A & 0x0F) << 4
-        let hl = memoryRead(from: HL)
+        let hl = await memory.read(from: HL)
         let part3 = (hl & 0xF0) >> 4
         let part4 = hl & 0x0F
         A = part1 | part4
-        memoryWrite(to: HL, value: (part3 | part2))
+        await memory.write(to: HL, value: (part3 | part2))
             F = preserve(carry) | sz53pv(A)
             memptr = HL &+ 1
 
@@ -222,8 +222,8 @@ extension Z80 {
             F = masks.halfCarryMask | masks.overflowMask | masks.carryMask | (sz53(HL.highByte()) & 0xA8)
 
         case 0x6B: // LD HL, (nn)
-            let address = nextWord()
-            HL = memoryReadWord(from: address)
+            let address = await nextWord()
+            HL = await memory.readWord(from: address)
             memptr = address &+ 1
 
 
@@ -231,11 +231,11 @@ extension Z80 {
 
         let part1 = A & 0xF0
         let part2 = (A & 0x0F)
-        let hl = memoryRead(from: HL)
+        let hl = await memory.read(from: HL)
         let part3 = (hl & 0xF0) >> 4
         let part4 = (hl & 0x0F) << 4
         A = part1 | part3
-        memoryWrite(to: HL, value: (part4 | part2))
+        await memory.write(to: HL, value: (part4 | part2))
             F = preserve(carry) | sz53pv(A)
             memptr = HL &+ 1
 
@@ -257,8 +257,8 @@ extension Z80 {
             F = masks.halfCarryMask | masks.overflowMask | masks.carryMask | (sz53(HL.highByte()) & 0xA8) | negative | (HL == 0 ? 0x70 : 0x00)
 
         case 0x73: // LD (nn), SP
-            let address = nextWord()
-            memoryWriteWord(to: address, value: SP)
+            let address = await nextWord()
+            await memory.writeWord(to: address, value: SP)
             memptr = address &+ 1
 
         case 0x78: // IN A, (C)
@@ -281,13 +281,13 @@ extension Z80 {
             F = masks.halfCarryMask | masks.overflowMask | masks.carryMask | (sz53(HL.highByte()) & 0xA8)
 
         case 0x7B: // LD SP, (nn)
-            let address = nextWord()
-            SP = memoryReadWord(from: address)
+            let address = await nextWord()
+            SP = await memory.readWord(from: address)
             memptr = address &+ 1
 
         case 0xA0: // LDI
-            let transferedByte = memoryRead(from: HL)
-            memoryWrite(to: DE, value: transferedByte)
+            let transferedByte = await memory.read(from: HL)
+            await memory.write(to: DE, value: transferedByte)
             DE.inc()
             HL.inc()
             BC.dec()
@@ -296,7 +296,7 @@ extension Z80 {
 
 
         case 0xA1: // CPI
-            let transferedByte = memoryRead(from: HL)
+            let transferedByte = await memory.read(from: HL)
             HL.inc()
             BC.dec()
             let masks = carryHalfCarryOverflowCalculationSub(value: A, amount: transferedByte)
@@ -307,10 +307,10 @@ extension Z80 {
 
         case 0xA2: // INI
             let value = performIn(port: C, map: B)
-            memoryWrite(to: HL, value: value)
+            await memory.write(to: HL, value: value)
             HL.inc()
             memptr = BC &+ 1
-            dec(.B)
+            await dec(.B)
             let bit1: UInt8 = (value & 0x80) >> 6 // copy of bit 7 of transfered value
             let calculation: UInt8 = value &+ C &+ 1
             let bits0And4: UInt8 = (calculation >= value ? 0x00 : 0x11) // If overflows
@@ -320,10 +320,10 @@ extension Z80 {
 
 
         case 0xA3: // OUTI
-            let value = memoryRead(from: HL)
+            let value = await memory.read(from: HL)
             performOut(port: C, map: B, value: value)
             HL.inc()
-            dec(.B)
+            await dec(.B)
             let bit1: UInt8 = (value & 0x80) >> 6 // copy of bit 7 of transfered value
             let calculation: UInt8 = value &+ L
             let bits0And4: UInt8 = (calculation >= value ? 0x00 : 0x11) // If overflows
@@ -334,8 +334,8 @@ extension Z80 {
 
 
         case 0xA8: // LDD
-            let transferedByte = memoryRead(from: HL)
-            memoryWrite(to: DE, value: transferedByte)
+            let transferedByte = await memory.read(from: HL)
+            await memory.write(to: DE, value: transferedByte)
             DE.dec()
             HL.dec()
             BC.dec()
@@ -344,7 +344,7 @@ extension Z80 {
 
 
         case 0xA9: // CPD
-            let transferedByte = memoryRead(from: HL)
+            let transferedByte = await memory.read(from: HL)
             HL.dec()
             BC.dec()
             let masks = carryHalfCarryOverflowCalculationSub(value: A, amount: transferedByte)
@@ -355,10 +355,10 @@ extension Z80 {
 
         case 0xAA: // IND
             let value = performIn(port: C, map: B)
-            memoryWrite(to: HL, value: value)
+            await memory.write(to: HL, value: value)
             HL.dec()
             memptr = BC &- 1
-            dec(.B)
+            await dec(.B)
             let bit1: UInt8 = (value & 0x80) >> 6 // copy of bit 7 of transfered value
             let calculation: UInt8 = value &+ C &- 1
             let bits0And4: UInt8 = (calculation >= value ? 0x00 : 0x11) // If overflows
@@ -368,10 +368,10 @@ extension Z80 {
 
 
         case 0xAB: // OUTD
-            let value = memoryRead(from: HL)
+            let value = await memory.read(from: HL)
             performOut(port: C, map: B, value: value)
             HL.dec()
-            dec(.B)
+            await dec(.B)
             let bit1: UInt8 = (value & 0x80) >> 6 // copy of bit 7 of transfered value
             let calculation: UInt8 = value &+ L
             let bits0And4: UInt8 = (calculation >= value ? 0x00 : 0x11) // If overflows
@@ -381,8 +381,8 @@ extension Z80 {
             memptr = BC &- 1
 
         case 0xB0: // LDIR
-            let transferedByte = memoryRead(from: HL)
-            memoryWrite(to: DE, value: transferedByte)
+            let transferedByte = await memory.read(from: HL)
+            await memory.write(to: DE, value: transferedByte)
             BC.dec()
             let byteFor53 = transferedByte &+ A
             F = preserve(sign, zero, carry) | bits53ForCopy(byteFor53)
@@ -395,7 +395,7 @@ extension Z80 {
 
 
         case 0xB1: // CPIR
-            let transferedByte = memoryRead(from: HL)
+            let transferedByte = await memory.read(from: HL)
             HL.inc()
             BC.dec()
             let masks = carryHalfCarryOverflowCalculationSub(value: A, amount: transferedByte)
@@ -411,10 +411,10 @@ extension Z80 {
 
         case 0xB2: // INIR
             let value = performIn(port: C, map: B)
-            memoryWrite(to: HL, value: value)
+            await memory.write(to: HL, value: value)
             HL.inc()
             memptr = BC &+ 1
-            dec(.B)
+            await dec(.B)
             let bit1: UInt8 = (value & 0x80) >> 6 // copy of bit 7 of transfered value
             let calculation: UInt8 = value &+ C &+ 1
             let calcUInt16: UInt16 = UInt16(value) + ((UInt16(C) + 1) & 0xFF)
@@ -428,10 +428,10 @@ extension Z80 {
 
 
         case 0xB3: // OTIR
-            let value = memoryRead(from: HL)
+            let value = await memory.read(from: HL)
             performOut(port: C, map: B, value: value)
             HL.inc()
-            dec(.B)
+            await dec(.B)
             let bit1: UInt8 = (value & 0x80) >> 6 // copy of bit 7 of transfered value
             let calculation: UInt8 = value &+ L
             let bits0And4: UInt8 = (calculation >= value ? 0x00 : 0x11) // If overflows
@@ -445,8 +445,8 @@ extension Z80 {
 
 
         case 0xB8: // LDDR
-            let transferedByte = memoryRead(from: HL)
-            memoryWrite(to: DE, value: transferedByte)
+            let transferedByte = await memory.read(from: HL)
+            await memory.write(to: DE, value: transferedByte)
             DE.dec()
             HL.dec()
             BC.dec()
@@ -459,7 +459,7 @@ extension Z80 {
 
 
         case 0xB9: // CPDR
-            let transferedByte = memoryRead(from: HL)
+            let transferedByte = await memory.read(from: HL)
             HL.dec()
             BC.dec()
             let masks = carryHalfCarryOverflowCalculationSub(value: A, amount: transferedByte)
@@ -475,10 +475,10 @@ extension Z80 {
 
         case 0xBA: // INDR
             let value = performIn(port: C, map: B)
-            memoryWrite(to: HL, value: value)
+            await memory.write(to: HL, value: value)
             HL.dec()
             memptr = BC &- 1
-            dec(.B)
+            await dec(.B)
             let bit1: UInt8 = (value & 0x80) >> 6 // copy of bit 7 of transfered value
             let calculation: UInt8 = value &+ C &- 1
             let bits0And4: UInt8 = (calculation >= value ? 0x00 : 0x11) // If overflows
@@ -491,10 +491,10 @@ extension Z80 {
 
 
         case 0xBB: // OTDR
-            let value = memoryRead(from: HL)
+            let value = await memory.read(from: HL)
             performOut(port: C, map: B, value: value)
             HL.dec()
-            dec(.B)
+            await dec(.B)
             let bit1: UInt8 = (value & 0x80) >> 6 // copy of bit 7 of transfered value
             let calculation: UInt8 = value &+ L
             let bits0And4: UInt8 = (calculation >= value ? 0x00 : 0x11) // If overflows
@@ -509,6 +509,6 @@ extension Z80 {
         default:
             break
         }
-        mCyclesAndTStates(m: mCycles, t: ts)
+        await mCyclesAndTStates(m: mCycles, t: ts)
     }
 }

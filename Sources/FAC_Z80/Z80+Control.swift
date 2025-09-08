@@ -10,9 +10,9 @@ import Foundation
 extension Z80 {
     // PC and SP Specific
     
-    func next() -> UInt8 {
+    func next() async -> UInt8 {
         let oPC = PC
-        let opcode = memoryRead(from: PC)
+        let opcode = await memory.read(from: PC)
 //        if stack.count >= 50 {
 //            stack.removeFirst()
 //        }
@@ -27,9 +27,9 @@ extension Z80 {
         return opcode
     }
     
-    func nextWord() -> UInt16 {
-        let low = next()
-        let high = next()
+    func nextWord() async -> UInt16 {
+        let low = await next()
+        let high = await next()
         return (UInt16(high) * 256) + UInt16(low)
     }
     
@@ -44,28 +44,28 @@ extension Z80 {
         controller.memoryMap?.recordJump(jump)
     }
     
-    func push(_ value: UInt16) {
+    func push(_ value: UInt16) async {
         SP = SP &- 2
-        memoryWriteWord(to: SP, value: value)
+        await memory.writeWord(to: SP, value: value)
 //        stack.append(value)
 //        controlDelegate?.updateStack(stack)
     }
     
-    func pop() -> UInt16 {
+    func pop() async -> UInt16 {
 //        if stackSize == 0 {
 //            logDelegate?.logError("Stack overflow")
 //        } else {
 //            stack.removeLast()
 //            controlDelegate?.updateStack(stack)
 //        }
-        let rtn = memoryReadWord(from: SP)
+        let rtn = await memory.readWord(from: SP)
         SP = SP &+ 2
         stackSize -= 1
         return rtn
     }
     
-    func ret() {
-        PC = pop()
+    func ret() async {
+        PC = await pop()
         memptr = PC
     }
     
@@ -81,8 +81,8 @@ extension Z80 {
 //        }
     }
     
-    public func resetProcessor() {
-        pause()
+    public func resetProcessor() async {
+        await pause()
         A = 0x00
         // Register Pairs
         BC = 0x00
@@ -124,7 +124,7 @@ extension Z80 {
   
         
         
-        standard()
+        await standard()
         
     }
 }

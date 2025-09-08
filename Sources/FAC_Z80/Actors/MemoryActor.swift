@@ -7,6 +7,7 @@
 
 import Foundation
 
-actor MemoryController {
-    
+actor Z80RAM {
+    var rom:[[UInt8]] = [[],[]]
+    var ram:[[UInt8]] = [[]]
 }
