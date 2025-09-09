@@ -632,7 +632,7 @@ extension Z80 {
 
         case 0xD3: // out (n) a
             let port = await next()
-            performOut(port: port, map: nil, value: A)
+            await performOut(port: port, map: nil, value: A)
             ts = 11
             memptr = await wordFrom(high: A, low: port &+ 1)
 
@@ -689,7 +689,7 @@ extension Z80 {
         case 0xDB: // in a, (n)
             let oldA = UInt16(A) << 8
             let port = await next()
-            A = performIn(port: port, map: A)
+            A = await performIn(port: port, map: A)
             memptr = oldA &+ UInt16(port) &+ 1
 
         case 0xDC: // call c, nn

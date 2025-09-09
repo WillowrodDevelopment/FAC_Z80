@@ -7,14 +7,14 @@
 
 import Foundation
 
-public class HardwarePorts {
+ public actor HardwarePorts {
     private var activeHardwarePorts: [String : UInt8] = [:]
     
     func reset()  {
         activeHardwarePorts = [:]
     }
     
-    func performIn(port: UInt8, map: UInt8? = nil)  -> UInt8 {
+    public func performIn(port: UInt8, map: UInt8? = nil)  -> UInt8 {
         let portID = "\(map?.hex() ?? "7f")\(port.hex())"
         let value = activeHardwarePorts[portID] ?? 0x00
         return value
