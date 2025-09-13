@@ -234,10 +234,10 @@ public class Z80Controller {
     }
 }
 
-@Observable
-public class Z80MemoryMap {
+public actor Z80MemoryMap {
     public var jumpMap: Set<UInt16> = []
-    public var dataMap: Set<UInt16> = []
+    public var dataMap8Bit: [UInt16: UInt8] = [:]
+    public var dataMap16Bit: [UInt16: UInt16] = [:]
     public var ixyMap: Set<UInt16> = []
     public var stackMap: Set<UInt16> = []
     public var showingSettings = false
@@ -261,13 +261,14 @@ public class Z80MemoryMap {
         }
     }
     
-    public func recordData(_ data: UInt16) {
+    public func recordData(_ data: UInt16, value8Bit: UInt8? = nil, value16Bit: UInt16? = nil) {
         if data > 0x4000 {
-            if dataMap.contains(data) {
-                return
+            if let value8Bit {
+                dataMap8Bit[data] = value8Bit
             }
-            print("Record Data: \(data)")
-                dataMap.insert(data)
+            if let value16Bit {
+                dataMap16Bit[data] = value16Bit
+            }
         }
     }
     
@@ -278,5 +279,17 @@ public class Z80MemoryMap {
             }
                 stackMap.insert(data)
         }
+    }
+    
+    public func fetch8BitData() -> [(UInt16, UInt8)] {
+        return dataMap8Bit.map{($0.key, $0.value)}.sorted(by: {$0.0 < $1.0}) ?? []
+    }
+    
+    public func fetch16BitData() -> [(UInt16, UInt16)] {
+        return dataMap16Bit.map{($0.key, $0.value)}.sorted(by: {$0.0 < $1.0}) ?? []
+    }
+    
+    public func fetchJumpMap() -> [UInt16] {
+        return jumpMap.map{$0}.sorted(by: {$0 < $1}) ?? []
     }
 }

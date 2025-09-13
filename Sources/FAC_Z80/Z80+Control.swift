@@ -37,11 +37,11 @@ extension Z80 {
         PC -= value
     }
     
-    func relativeJump(twos: UInt8) {
+    func relativeJump(twos: UInt8) async {
         let jump = PC &+ UInt16(twos & 0x7f) &- UInt16(twos & 0x80)
         PC = jump
         memptr = PC
-        controller.memoryMap?.recordJump(jump)
+        await controller.memoryMap?.recordJump(jump)
     }
     
     func push(_ value: UInt16) async {
@@ -69,10 +69,10 @@ extension Z80 {
         memptr = PC
     }
     
-    func jump(_ target: UInt16) {
+    func jump(_ target: UInt16) async {
         PC = target
         memptr = PC
-        controller.memoryMap?.recordJump(target)
+       await controller.memoryMap?.recordJump(target)
 //        if controller.recordingJumpMap && target > 0x4000 {
 //            if !controller.jumpMap.contains(target){
 //                loggingService.log("New target: \(target) - \(target.hex())")

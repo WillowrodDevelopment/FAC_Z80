@@ -100,7 +100,7 @@ extension Z80 {
             if B == 0 {
                 ts = 8
             } else {
-                relativeJump(twos: dis)
+                await relativeJump(twos: dis)
                 ts = 13
             }
 
@@ -134,7 +134,7 @@ extension Z80 {
 
         case 0x18: // jr dis
             let dis = await next()
-            relativeJump(twos: dis)
+            await relativeJump(twos: dis)
             ts = 12
 
         case 0x19: // add hl, de
@@ -174,7 +174,7 @@ extension Z80 {
             if F & zero > 0 {
                 ts = 7
             } else {
-                relativeJump(twos: dis)
+                await relativeJump(twos: dis)
                 ts = 12
             }
 
@@ -187,7 +187,7 @@ extension Z80 {
             await memory.writeWord(to: target, value: HL)
             memptr = target &+ 1
             ts = 16
-            controller.memoryMap?.recordData(target)
+            await controller.memoryMap?.recordData(target, value16Bit: HL)
 
         case 0x23: // inc hl
             HL.inc()
@@ -240,7 +240,7 @@ extension Z80 {
             if F & zero == 0 {
                 ts += 3
             } else {
-                relativeJump(twos: dis)
+                await relativeJump(twos: dis)
                 ts += 8
             }
 
@@ -258,7 +258,7 @@ extension Z80 {
             HL = await memory.readWord(from: address)
             memptr = address &+ 1
             ts += 16
-            controller.memoryMap?.recordData(address)
+            //controller.memoryMap?.recordData(address)
 
         case 0x2B: // dec hl
             HL.dec()
@@ -283,7 +283,7 @@ extension Z80 {
             if F & carry > 0 {
                 ts += 3
             } else {
-                relativeJump(twos: dis)
+                await relativeJump(twos: dis)
                 ts += 8
             }
 
@@ -294,9 +294,9 @@ extension Z80 {
         case 0x32: // ld (nn), a
             let target = await nextWord()
             await memory.write(to: target, value: A)
+            await controller.memoryMap?.recordData(target, value8Bit: A)
             memptr = await wordFrom(high: A, low: (target.lowByte() &+ 1))
             ts += 9
-            controller.memoryMap?.recordData(target)
 
         case 0x33: // inc SP
             SP.inc()
@@ -306,17 +306,21 @@ extension Z80 {
             let masks = halfCarryOverflowCalculationAdd(value: await memory.read(from: HL), amount: 0x01)
             // memory[Int(HL)] = masks.value
             await memory.write(to: HL, value: masks.value)
+            await controller.memoryMap?.recordData(HL, value8Bit: masks.value)
             F = (F & carry) | masks.halfCarryMask | masks.overflowMask | sz53(masks.value)
             ts = 11
 
         case 0x35:
             let masks = halfCarryOverflowCalculationSub(value: await memory.read(from: HL), amount: 0x01)
             await memory.write(to: HL, value: masks.value)
+            await controller.memoryMap?.recordData(HL, value8Bit: masks.value)
             F = (F & carry) | masks.halfCarryMask | masks.overflowMask | sz53(masks.value) | negative
             ts = 11
 
         case 0x36:
-            await memory.write(to: HL, value: await next())
+            let nxt = await next()
+            await memory.write(to: HL, value: nxt)
+            await controller.memoryMap?.recordData(HL, value8Bit: nxt)
             ts = 11
 
         case 0x37: // scf
@@ -330,7 +334,7 @@ extension Z80 {
             if F & carry == 0 {
                 ts += 3
             } else {
-                relativeJump(twos: dis)
+                await relativeJump(twos: dis)
                 ts += 8
             }
 
@@ -347,7 +351,7 @@ extension Z80 {
             memptr = target &+ 1
             A = await memory.read(from: target)  //memory[target]
             ts = 11
-            controller.memoryMap?.recordData(target)
+            await controller.memoryMap?.recordData(target, value8Bit: A)
 
         case 0x3B: // dec SP
             SP.dec()
@@ -390,7 +394,6 @@ extension Z80 {
                 L = sourceValue
             case 0x06:
                 await memory.write(to: HL, value: sourceValue)
-           //     memory[Int(HL)] = sourceValue
             case 0x07:
                 A = sourceValue
             default:
@@ -487,21 +490,21 @@ extension Z80 {
         case 0xC2: // jp nz, nn
             let target = await nextWord()
             if (F & zero) == 0 {
-                jump(target)
+                await jump(target)
             } else {
                 memptr = target
             }
             ts = 10
 
         case 0xC3: // jp nn
-            jump(await nextWord())
+            await jump(await nextWord())
             ts = 10
 
         case 0xC4: // call nz, nn
             let target = await nextWord()
             if (F & zero) == 0 {
                 await push(PC)
-                jump(target)
+                await jump(target)
                 ts = 17
             } else {
                 ts = 10
@@ -521,7 +524,7 @@ extension Z80 {
 
         case 0xC7: // RST 0x00
             await push(PC)
-            jump(0x00)
+            await jump(0x00)
             ts = 11
 
         case 0xC8:// ret z
@@ -539,7 +542,7 @@ extension Z80 {
         case 0xCA:// jp z, nn
             let target = await nextWord()
             if (F & zero) > 0 {
-                jump(target)
+                await jump(target)
             } else {
                 memptr = target
             }
@@ -554,7 +557,7 @@ extension Z80 {
             let target = await nextWord()
             if (F & zero) > 0 {
                 await push(PC)
-                jump(target)
+                await jump(target)
                 ts = 17
             } else {
                 ts = 10
@@ -564,7 +567,7 @@ extension Z80 {
         case 0xCD: // call nn
             let target = await nextWord()
             await push(PC)
-            jump(target)
+            await jump(target)
             ts = 17
 
         case 0xCE: // adc a,n
@@ -576,7 +579,7 @@ extension Z80 {
 
         case 0xCF: // RST 0x08
             await push(PC)
-            jump(0x08)
+            await jump(0x08)
             ts = 11
 
         case 0xD0:// ret nc
@@ -594,7 +597,7 @@ extension Z80 {
         case 0xD2: // jp nc, nn
             let target = await nextWord()
             if (F & carry) == 0 {
-                jump(target)
+                await jump(target)
             } else {
                 memptr = target
             }
@@ -610,7 +613,7 @@ extension Z80 {
             let target = await nextWord()
             if (F & carry) == 0 {
                 await push(PC)
-                jump(target)
+                await jump(target)
                 ts = 17
             } else {
                 ts = 10
@@ -630,7 +633,7 @@ extension Z80 {
 
         case 0xD7: // RST 0x10
             await push(PC)
-            jump(0x10)
+            await jump(0x10)
             ts = 11
 
         case 0xD8:// ret c
@@ -650,7 +653,7 @@ extension Z80 {
         case 0xDA:// jp c, nn
             let target = await nextWord()
             if (F & carry) > 0 {
-                jump(target)
+                await jump(target)
             } else {
                 memptr = target
             }
@@ -666,7 +669,7 @@ extension Z80 {
             let target = await nextWord()
             if (F & carry) > 0 {
                 await push(PC)
-                jump(target)
+                await jump(target)
                 ts = 17
             } else {
                 ts = 10
@@ -687,7 +690,7 @@ extension Z80 {
 
         case 0xDF: // RST 0x18
             await push(PC)
-            jump(0x18)
+            await jump(0x18)
             ts = 11
 
         case 0xE0:// ret po
@@ -705,7 +708,7 @@ extension Z80 {
         case 0xE2: // jp po, nn
             let target = await nextWord()
             if (F & parityOverflow) == 0 {
-                jump(target)
+                await jump(target)
             } else {
                 memptr = target
             }
@@ -722,7 +725,7 @@ extension Z80 {
             let target = await nextWord()
             if (F & parityOverflow) == 0 {
                 await push(PC)
-                jump(target)
+                await jump(target)
                 ts = 17
             } else {
                 ts = 10
@@ -741,7 +744,7 @@ extension Z80 {
 
         case 0xE7: // RST 0x20
             await push(PC)
-            jump(0x20)
+            await jump(0x20)
             ts = 11
 
         case 0xE8:// ret pe
@@ -758,7 +761,7 @@ extension Z80 {
         case 0xEA:// jp pe, nn
             let target = await nextWord()
             if (F & parityOverflow) > 0 {
-                jump(target)
+                await jump(target)
             } else {
                 memptr = target
             }
@@ -773,7 +776,7 @@ extension Z80 {
             let target = await nextWord()
             if (F & parityOverflow) > 0 {
                 await push(PC)
-                jump(target)
+                await jump(target)
                 ts = 17
             } else {
                 ts = 10
@@ -794,7 +797,7 @@ extension Z80 {
 
         case 0xEF: // RST 0x28
             await push(PC)
-            jump(0x28)
+            await jump(0x28)
             ts = 11
 
         case 0xF0:// ret p
@@ -812,7 +815,7 @@ extension Z80 {
         case 0xF2: // jp p, nn
             let target = await nextWord()
             if (F & sign) == 0 {
-                jump(target)
+                await jump(target)
             } else {
                 memptr = target
             }
@@ -826,7 +829,7 @@ extension Z80 {
             let target = await nextWord()
             if (F & sign) == 0 {
                 await push(PC)
-                jump(target)
+                await jump(target)
                 ts = 17
             } else {
                 ts = 10
@@ -845,7 +848,7 @@ extension Z80 {
 
         case 0xF7: // RST 0x30
             await push(PC)
-            jump(0x30)
+            await jump(0x30)
             ts = 11
 
         case 0xF8: // ret m
@@ -863,7 +866,7 @@ extension Z80 {
         case 0xFA:// jp m, nn
             let target = await nextWord()
             if (F & sign) > 0 {
-                jump(target)
+                await jump(target)
             } else {
                 memptr = target
             }
@@ -877,7 +880,7 @@ extension Z80 {
             let target = await nextWord()
             if (F & sign) > 0 {
                 await push(PC)
-                jump(target)
+                await jump(target)
                 ts = 17
             } else {
                 ts = 10
@@ -897,7 +900,7 @@ extension Z80 {
 
         case 0xFF: // RST 0x38
             await push(PC)
-            jump(0x38)
+            await jump(0x38)
             ts = 11
 
         default:
