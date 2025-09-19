@@ -243,7 +243,7 @@ public actor Z80MemoryMap {
     public var showingSettings = false
     
     public func recordJump(_ jump: UInt16) {
-        if jump > 0x4000 {
+        if jump > 0x5800 {
             if jumpMap.contains(jump) {
                 return
             }
@@ -252,7 +252,7 @@ public actor Z80MemoryMap {
     }
     
     public func recordIxy(_ data: UInt16) {
-        if data > 0x4000 {
+        if data > 0x5800 {
             if ixyMap.contains(data) {
                 return
             }
@@ -262,7 +262,7 @@ public actor Z80MemoryMap {
     }
     
     public func recordData(_ data: UInt16, value8Bit: UInt8? = nil, value16Bit: UInt16? = nil) {
-        if data > 0x4000 {
+        if data > 0x5800 {
             if let value8Bit {
                 dataMap8Bit[data] = value8Bit
             }
@@ -273,7 +273,7 @@ public actor Z80MemoryMap {
     }
     
     public func recordStack(_ data: UInt16) {
-        if data > 0x4000 {
+        if data > 0x5800 {
             if stackMap.contains(data) {
                 return
             }
@@ -291,5 +291,17 @@ public actor Z80MemoryMap {
     
     public func fetchJumpMap() -> [UInt16] {
         return jumpMap.map{$0}.sorted(by: {$0 < $1}) ?? []
+    }
+    
+    public func clear8BitData() {
+        dataMap8Bit.removeAll()
+    }
+    
+    public func clear16BitData() {
+        dataMap16Bit.removeAll()
+    }
+    
+    public func clearJumpMap() {
+        jumpMap.removeAll()
     }
 }

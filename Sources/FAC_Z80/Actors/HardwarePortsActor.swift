@@ -13,9 +13,26 @@ import Foundation
     func reset()  {
         activeHardwarePorts = [:]
     }
+     
+     func getPort(port: String) -> UInt8 {
+         return activeHardwarePorts[port.lowercased()] ?? 0xFF
+     }
     
     public func performIn(port: UInt8, map: UInt8? = nil)  -> UInt8 {
         let portID = "\(map?.hex() ?? "7f")\(port.hex())"
+        if (portID == "00fe") {
+            let p1 = getPort(port: "fefe")
+            let p2 = getPort(port: "FDFE")
+            let p3 = getPort(port: "FBFE")
+            let p4 = getPort(port: "F7FE")
+            let p5 = getPort(port: "EFFE")
+            let p6 = getPort(port: "DFFE")
+            let p7 = getPort(port: "BFFE")
+            let p8 = getPort(port: "7FFE")
+            let allp = p1 & p2 & p3 & p4 & p5 & p6 & p7 & p8
+            print ("All ports: \(allp.hex())")
+            return allp
+        }
         let value = activeHardwarePorts[portID] ?? 0x00
         return value
     }
