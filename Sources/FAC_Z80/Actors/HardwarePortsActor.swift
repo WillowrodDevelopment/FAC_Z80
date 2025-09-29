@@ -30,7 +30,7 @@ import Foundation
             let p7 = getPort(port: "BFFE")
             let p8 = getPort(port: "7FFE")
             let allp = p1 & p2 & p3 & p4 & p5 & p6 & p7 & p8
-            print ("All ports: \(allp.hex())")
+  //          print ("All ports: \(allp.hex())")
             return allp
         }
         let value = activeHardwarePorts[portID] ?? 0x00

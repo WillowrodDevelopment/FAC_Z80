@@ -14,6 +14,9 @@ extension Z80 {
         await resetProcessor()
         await standard()
         while shouldProcess {
+//            if PC == 36794 {
+//                print("Kempston Fire Pressed")
+//            }
             if controller.processorSpeed == .paused {
   //               A small 'hack' to stop the processor freezing when going into a pause state.
 //                Task {

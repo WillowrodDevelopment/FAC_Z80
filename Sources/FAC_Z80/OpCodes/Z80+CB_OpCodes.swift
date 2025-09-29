@@ -17,7 +17,7 @@ extension Z80 {
         let source = opCode & 0x07
         let target = opCode >> 3
         let sourceValue = await valueFromSource(source: source)
-        var ts = 4
+        var ts = source == 0x06 ? 15 : 8
         var mCycles = 2
         switch target {
         case 0x00: // rlc
@@ -77,6 +77,7 @@ extension Z80 {
             }
             carryMask = carryMask | (F & carry)
             if source == 6 {
+                ts = 12
                 carryMask = carryMask | bits53(memptr.highByte())
             } else {
                 carryMask = carryMask | bits53(sourceValue)

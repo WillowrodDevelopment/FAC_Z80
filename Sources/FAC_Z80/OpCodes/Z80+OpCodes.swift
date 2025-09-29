@@ -14,13 +14,10 @@ extension Z80 {
 
     public func fetchAndExecute() async {
         if isInHaltState {
-            await mCyclesAndTStates(m: 1, t: 10)
+            await mCyclesAndTStates(m: 1, t: 4)
             return
         }
         let oldPC = PC
-//        if loggingService.isLoggingProcessor {
-//            lastPCValues.append(oldPC)
-//        }
 
         let opCode = await next()
         var ts = 4
@@ -78,6 +75,7 @@ extension Z80 {
 
         case 0x0B: // dec bc
             BC.dec()
+            ts = 6
 
         case 0x0C: // inc c
            await inc(.C)
@@ -180,7 +178,7 @@ extension Z80 {
 
         case 0x21: // ld hl, nn
             HL = await nextWord()
-            ts = 7
+            ts = 10
 
         case 0x22: // ld (nn), hl
             let target = await nextWord()
@@ -203,6 +201,7 @@ extension Z80 {
 
         case 0x26: // ld h, n
             H = await next()
+            ts = 7
 
         case 0x27: // daa
 
@@ -238,10 +237,10 @@ extension Z80 {
         case 0x28: // jr z, dis
             let dis = await next()
             if F & zero == 0 {
-                ts += 3
+                ts = 7
             } else {
                 await relativeJump(twos: dis)
-                ts += 8
+                ts = 12
             }
 
 
@@ -251,18 +250,18 @@ extension Z80 {
             memptr = HL &+ 1
             HL = addtemp.value //UInt16(addtemp & 0xffff)
             F = preserve(sign, zero, parityOverflow) | addtemp.halfCarryMask | carryMask | bits53OnH
-            ts += 7
+            ts = 11
 
         case 0x2A: // ld hl, (nn)
             let address = await nextWord()
             HL = await memory.readWord(from: address)
             memptr = address &+ 1
-            ts += 16
+            ts = 16
             //controller.memoryMap?.recordData(address)
 
         case 0x2B: // dec hl
             HL.dec()
-            ts += 2
+            ts = 6
 
         case 0x2C:
            await inc(.L)
@@ -272,7 +271,7 @@ extension Z80 {
 
         case 0x2E: // ld l, n
             L = await next()
-            ts += 3
+            ts = 7
 
         case 0x2F: // cpl
             A = ~A
@@ -281,22 +280,22 @@ extension Z80 {
         case 0x30: // jr nc, dis
             let dis = await next()
             if F & carry > 0 {
-                ts += 3
+                ts = 7
             } else {
                 await relativeJump(twos: dis)
-                ts += 8
+                ts = 12
             }
 
         case 0x31: // ld sp, nn
             SP = await nextWord()
-            ts += 6
+            ts = 10
 
         case 0x32: // ld (nn), a
             let target = await nextWord()
             await memory.write(to: target, value: A)
             await controller.memoryMap?.recordData(target, value8Bit: A)
             memptr = await wordFrom(high: A, low: (target.lowByte() &+ 1))
-            ts += 9
+            ts = 13
 
         case 0x33: // inc SP
             SP.inc()
@@ -321,7 +320,7 @@ extension Z80 {
             let nxt = await next()
             await memory.write(to: HL, value: nxt)
             await controller.memoryMap?.recordData(HL, value8Bit: nxt)
-            ts = 11
+            ts = 10
 
         case 0x37: // scf
             let preserved = preserve(sign, zero, parityOverflow)
@@ -332,10 +331,10 @@ extension Z80 {
         case 0x38: // jr c, dis
             let dis = await next()
             if F & carry == 0 {
-                ts += 3
+                ts = 7
             } else {
                 await relativeJump(twos: dis)
-                ts += 8
+                ts = 12
             }
 
         case 0x39:// add hl, sp
@@ -344,13 +343,13 @@ extension Z80 {
             memptr = HL &+ 1
             HL = addtemp.value //UInt16(addtemp & 0xffff)
             F = preserve(sign, zero, parityOverflow) | addtemp.halfCarryMask | carryMask | bits53OnH
-            ts += 7
+            ts = 11
 
         case 0x3A: // ld A, (nn)
             let target = await nextWord()
             memptr = target &+ 1
             A = await memory.read(from: target)  //memory[target]
-            ts = 11
+            ts = 13
             await controller.memoryMap?.recordData(target, value8Bit: A)
 
         case 0x3B: // dec SP
@@ -374,8 +373,8 @@ extension Z80 {
             let cFlag = hFlag > 0 ? 0x00 : carry
             F = preserved | cFlag | hFlag | fiveThree
 
-
-        case 0x40...0x75, 0x77...0x7F: // ld r,r
+            
+        case 0x40...0x6F, 0x78...0x7F: // ld r,r
             let source = opCode & 0x07
             let target = (opCode >> 3) & 0x07
             let sourceValue = await valueFromSource(source: source)
@@ -399,79 +398,116 @@ extension Z80 {
             default:
                 break
             }
-            if sourceValue == 0x06 {
+            if (source == 0x06) {
                 ts = 7
+            } else {
+                ts = 4
             }
+            
+        case 0x70...0x75, 0x77: // ld r,r
+            let source = opCode & 0x07
+            let target = (opCode >> 3) & 0x07
+            let sourceValue = await valueFromSource(source: source)
+            switch target {
+            case 0x00:
+                B = sourceValue
+            case 0x01:
+                C = sourceValue
+            case 0x02:
+                D = sourceValue
+            case 0x03:
+                E = sourceValue
+            case 0x04:
+                H = sourceValue
+            case 0x05:
+                L = sourceValue
+            case 0x06:
+                await memory.write(to: HL, value: sourceValue)
+            case 0x07:
+                A = sourceValue
+            default:
+                break
+            }
+            ts = 7
 
         case 0x76: // halt
             //PC = PC &- 0x01
+            print("Halting")
             isInHaltState = true
 
         case 0x80...0x87: // add a,r
-            let sourceValue = await valueFromSource(source: opCode & 0x07)
+            let source = opCode & 0x07
+            let sourceValue = await valueFromSource(source: source)
             let masks = carryHalfCarryOverflowCalculationAdd(value: A, amount: sourceValue)
             A = masks.value
             F = masks.halfCarryMask | masks.overflowMask | masks.carryMask | sz53(A)
-            if sourceValue == 0x06 {
+            if source == 0x06 {
                 ts = 7
             }
 
         case 0x88...0x8F: // adc a,r
-            let sourceValue = await valueFromSource(source: opCode & 0x07)
+            let source = opCode & 0x07
+            let sourceValue = await valueFromSource(source: source)
             let masks = carryHalfCarryOverflowCalculationAdd(value: A, amount: sourceValue, carryIn: F & carry)
             A = masks.value
             F = masks.halfCarryMask | masks.overflowMask | masks.carryMask | sz53(A)
-            if sourceValue == 0x06 {
+            if source == 0x06 {
                 ts = 7
             }
 
         case 0x90...0x97: // sub a,r
-            let sourceValue = await valueFromSource(source: opCode & 0x07)
+            let source = opCode & 0x07
+            let sourceValue = await valueFromSource(source: source)
             let masks = carryHalfCarryOverflowCalculationSub(value: A, amount: sourceValue)
             A = masks.value
             F = masks.halfCarryMask | masks.overflowMask | masks.carryMask | sz53(A) | negative
-            if sourceValue == 0x06 {
+            if source == 0x06 {
                 ts = 7
             }
 
         case 0x98...0x9f: // sbc a,r
-            let sourceValue = await valueFromSource(source: opCode & 0x07)
+            let source = opCode & 0x07
+            let sourceValue = await valueFromSource(source: source)
             let masks = carryHalfCarryOverflowCalculationSub(value: A, amount: sourceValue, carryIn: F & carry)
             A = masks.value
             F = masks.halfCarryMask | masks.overflowMask | masks.carryMask | sz53(A) | negative
-            if sourceValue == 0x06 {
+            if source == 0x06 {
                 ts = 7
             }
 
         case 0xA0...0xA7: // and r
-            let sourceValue = await valueFromSource(source: opCode & 0x07)
+            let source = opCode & 0x07
+            let sourceValue = await valueFromSource(source: source)
             A = A & sourceValue
             F = sz53pv(A) | halfCarry
-            if sourceValue == 0x06 {
+            if source == 0x06 {
                 ts = 7
             }
 
         case 0xA8...0xAF: // xor r
-            let sourceValue = await valueFromSource(source: opCode & 0x07)
+            let source = opCode & 0x07
+            let sourceValue = await valueFromSource(source: source)
             A = A ^ sourceValue
             F = sz53pv(A)
-            if sourceValue == 0x06 {
+            if source == 0x06 {
                 ts = 7
             }
 
         case 0xB0...0xB7: //or r
-            let sourceValue = await valueFromSource(source: opCode & 0x07)
+            let source = opCode & 0x07
+            let sourceValue = await valueFromSource(source: source)
             A = A | sourceValue
             F = sz53pv(A)
-            if sourceValue == 0x06 {
+            if source == 0x06 {
                 ts = 7
             }
 
         case 0xB8...0xBF: // cp r
-            let sourceValue = await valueFromSource(source: opCode & 0x07)
+            let source = opCode & 0x07
+            let sourceValue = await valueFromSource(source: source)
             let masks = carryHalfCarryOverflowCalculationSub(value: A, amount: sourceValue)
             F = masks.halfCarryMask | masks.overflowMask | masks.carryMask | (sz53(masks.value) & 0xC0) | negative | bits53(sourceValue)
-            if sourceValue == 0x06 {
+            if source == 0x06 {
                 ts = 7
             }
 
@@ -664,6 +700,7 @@ extension Z80 {
             let port = await next()
             A = await performIn(port: port, map: A)
             memptr = oldA &+ UInt16(port) &+ 1
+            ts = 11
 
         case 0xDC: // call c, nn
             let target = await nextWord()
