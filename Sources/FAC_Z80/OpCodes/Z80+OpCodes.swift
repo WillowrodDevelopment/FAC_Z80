@@ -431,8 +431,6 @@ extension Z80 {
             ts = 7
 
         case 0x76: // halt
-            //PC = PC &- 0x01
-            print("Halting")
             isInHaltState = true
 
         case 0x80...0x87: // add a,r

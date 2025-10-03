@@ -17,6 +17,7 @@ extension Z80 {
 //            if PC == 36794 {
 //                print("Kempston Fire Pressed")
 //            }
+
             if controller.processorSpeed == .paused {
   //               A small 'hack' to stop the processor freezing when going into a pause state.
 //                Task {
@@ -67,26 +68,19 @@ extension Z80 {
                 await push(PC)
                 switch interuptMode {
                 case 0:
-                    PC = 0x0066
+                    PC = 0x0066 // Unused on the ZX Spectrum
                 case 1:
                     PC = 0x0038
                 default:
-                    let intAddress = (UInt16(I) * 256) + UInt16(R)
+                    let intAddress = (UInt16(I) * 256) + 0xff // Assume the databus will send 0xFF as no external hardware available
                     PC = await memory.readWord(from: intAddress)
+                    await controller.memoryMap?.recordJump(PC, type: .IM2)
                 }
             }
         }
     }
     
-    func preProcess() async {
-//        if PC >= 0xF66C && PC <= 0xF68E {
-//            loggingService.log("Reading: \(PC.hex())")
-//        }
-    }
-    
-    func postProcess() async {
-        
-    }
+
     
     public func standard() async {
         await resume()

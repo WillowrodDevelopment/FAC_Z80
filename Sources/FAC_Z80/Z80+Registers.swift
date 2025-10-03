@@ -279,4 +279,26 @@ extension Z80 {
         
     }
     
+    func fetchRegisterData() async -> Dictionary<String, String> {
+        return ["A": A.hex(),
+                "B": B.hex(),
+                "C": C.hex(),
+                "D": D.hex(),
+                "E": E.hex(),
+                "H": H.hex(),
+                "L": L.hex(),
+                "F": F.bin(),
+                "BC": BC.hex(),
+                "DE": DE.hex(),
+                "HL": HL.hex(),
+                "PC": PC.hex(),
+                "SP": SP.hex(),
+                "I": I.hex(),
+                "R": R.hex(),
+                "IM": String(interuptMode),
+                "IFF1": String(iff1),
+                "IFF2": String(iff2)
+    ]
+    }
+    
 }

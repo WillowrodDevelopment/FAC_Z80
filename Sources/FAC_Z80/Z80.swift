@@ -126,7 +126,7 @@ open class Z80 {
     public init(memory: MemoryDelegate) {
         self.memory = memory
         calculateTables()
-    //    startProcess()
+        controller.cpuLog = Z80Log(cpu: self)
     }
      
     public let controller = Z80Controller.shared
@@ -184,6 +184,17 @@ open class Z80 {
             tStates = 0
             await render()
         }
+        await controller.memoryMap?.recordPC(PC)
+    }
+    
+    open func preProcess() async {
+//        if PC >= 0xF66C && PC <= 0xF68E {
+//            loggingService.log("Reading: \(PC.hex())")
+//        }
+    }
+    
+    open func postProcess() async {
+        
     }
     
     open func preInPerform() {
@@ -213,6 +224,7 @@ public class Z80Controller {
     
     public var memoryMap: Z80MemoryMap? = nil
     public var storedMemoryMap: Z80MemoryMap? = nil
+    public var cpuLog: Z80Log? = nil
     
     public var showingSettings = false
     
@@ -234,74 +246,3 @@ public class Z80Controller {
     }
 }
 
-public actor Z80MemoryMap {
-    public var jumpMap: Set<UInt16> = []
-    public var dataMap8Bit: [UInt16: UInt8] = [:]
-    public var dataMap16Bit: [UInt16: UInt16] = [:]
-    public var ixyMap: Set<UInt16> = []
-    public var stackMap: Set<UInt16> = []
-    public var showingSettings = false
-    
-    public func recordJump(_ jump: UInt16) {
-        if jump > 0x5800 {
-            if jumpMap.contains(jump) {
-                return
-            }
-                jumpMap.insert(jump)
-        }
-    }
-    
-    public func recordIxy(_ data: UInt16) {
-        if data > 0x5800 {
-            if ixyMap.contains(data) {
-                return
-            }
-            print("Record Ixy: \(data)")
-                ixyMap.insert(data)
-        }
-    }
-    
-    public func recordData(_ data: UInt16, value8Bit: UInt8? = nil, value16Bit: UInt16? = nil) {
-        if data > 0x5800 {
-            if let value8Bit {
-                dataMap8Bit[data] = value8Bit
-            }
-            if let value16Bit {
-                dataMap16Bit[data] = value16Bit
-            }
-        }
-    }
-    
-    public func recordStack(_ data: UInt16) {
-        if data > 0x5800 {
-            if stackMap.contains(data) {
-                return
-            }
-                stackMap.insert(data)
-        }
-    }
-    
-    public func fetch8BitData() -> [(UInt16, UInt8)] {
-        return dataMap8Bit.map{($0.key, $0.value)}.sorted(by: {$0.0 < $1.0}) ?? []
-    }
-    
-    public func fetch16BitData() -> [(UInt16, UInt16)] {
-        return dataMap16Bit.map{($0.key, $0.value)}.sorted(by: {$0.0 < $1.0}) ?? []
-    }
-    
-    public func fetchJumpMap() -> [UInt16] {
-        return jumpMap.map{$0}.sorted(by: {$0 < $1}) ?? []
-    }
-    
-    public func clear8BitData() {
-        dataMap8Bit.removeAll()
-    }
-    
-    public func clear16BitData() {
-        dataMap16Bit.removeAll()
-    }
-    
-    public func clearJumpMap() {
-        jumpMap.removeAll()
-    }
-}
