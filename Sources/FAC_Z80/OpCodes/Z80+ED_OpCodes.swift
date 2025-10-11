@@ -451,6 +451,7 @@ extension Z80 {
 
 
         case 0xB2: // INIR
+            print("Process INIR")
             let value = await performIn(port: C, map: B)
             await memory.write(to: HL, value: value)
             HL.inc()
@@ -472,6 +473,7 @@ extension Z80 {
 
 
         case 0xB3: // OTIR
+            print("Process OTIR")
             let value = await memory.read(from: HL)
             await performOut(port: C, map: B, value: value)
             HL.inc()
@@ -526,6 +528,7 @@ extension Z80 {
 
 
         case 0xBA: // INDR
+            print("Process INDR")
             let value = await performIn(port: C, map: B)
             await memory.write(to: HL, value: value)
             HL.dec()
@@ -546,6 +549,7 @@ extension Z80 {
 
 
         case 0xBB: // OTDR
+            print("Process OTDR")
             let value = await memory.read(from: HL)
             await performOut(port: C, map: B, value: value)
             HL.dec()

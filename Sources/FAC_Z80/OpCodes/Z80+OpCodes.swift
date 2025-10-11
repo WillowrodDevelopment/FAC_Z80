@@ -319,7 +319,7 @@ extension Z80 {
         case 0x36:
             let nxt = await next()
             await memory.write(to: HL, value: nxt)
-            await controller.memoryMap?.recordData(HL, value8Bit: nxt)
+            //await controller.memoryMap?.recordData(HL, value8Bit: nxt)
             ts = 10
 
         case 0x37: // scf
