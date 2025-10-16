@@ -147,6 +147,7 @@ extension Z80 {
             A = await memory.read(from: DE)
             memptr = DE &+ 1
             ts = 7
+            await controller.memoryMap?.recordData(DE, value8Bit: A)
 
         case 0x1B: // dec de
             DE.dec()
@@ -257,7 +258,7 @@ extension Z80 {
             HL = await memory.readWord(from: address)
             memptr = address &+ 1
             ts = 16
-            //controller.memoryMap?.recordData(address)
+            await controller.memoryMap?.recordData(address, value16Bit: HL)
 
         case 0x2B: // dec hl
             HL.dec()
@@ -425,6 +426,9 @@ extension Z80 {
                 await memory.write(to: HL, value: sourceValue)
             case 0x07:
                 A = sourceValue
+                if source == 0x07 {
+                    await controller.memoryMap?.recordData(HL, value8Bit: A)
+                }
             default:
                 break
             }
