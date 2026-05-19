@@ -44,10 +44,13 @@ open class Z80 {
 
     // Accumilator
     public var A: UInt8 = 0x00
-    // Register Pairs
-    public var BC: UInt16 = 0x00
-    public var DE: UInt16 = 0x00
-    public var HL: UInt16 = 0x00
+    // Individual 8-bit registers (BC, DE, HL pairs are computed)
+    public var B: UInt8 = 0x00
+    public var C: UInt8 = 0x00
+    public var D: UInt8 = 0x00
+    public var E: UInt8 = 0x00
+    public var H: UInt8 = 0x00
+    public var L: UInt8 = 0x00
     // Shadow Register Pair
     public var AF2: UInt16 = 0x0
     public var BC2: UInt16 = 0x0

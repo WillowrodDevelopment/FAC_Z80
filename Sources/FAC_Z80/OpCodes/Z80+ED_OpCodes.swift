@@ -316,9 +316,9 @@ extension Z80 {
         case 0xA0: // LDI
             let transferedByte = await memory.read(from: HL)
             await memory.write(to: DE, value: transferedByte)
-            DE.inc()
-            HL.inc()
-            BC.dec()
+            DE = DE &+ 1
+            HL = HL &+ 1
+            BC = BC &- 1
             let byteFor53 = transferedByte &+ A
             F = preserve(sign, zero, carry) | bits53ForCopy(byteFor53)
             ts = 16
@@ -326,8 +326,8 @@ extension Z80 {
 
         case 0xA1: // CPI
             let transferedByte = await memory.read(from: HL)
-            HL.inc()
-            BC.dec()
+            HL = HL &+ 1
+            BC = BC &- 1
             let masks = carryHalfCarryOverflowCalculationSub(value: A, amount: transferedByte)
             let byteFor53 = A &- transferedByte &- (masks.halfCarryMask >> 4)
             F = preserve(carry) | masks.halfCarryMask | (sz53(masks.value) & 0xC0) | negative | bits53ForCopy(byteFor53)
@@ -338,7 +338,7 @@ extension Z80 {
         case 0xA2: // INI
             let value = await performIn(port: C, map: B)
             await memory.write(to: HL, value: value)
-            HL.inc()
+            HL = HL &+ 1
             memptr = BC &+ 1
             await dec(.B)
             let bit1: UInt8 = (value & 0x80) >> 6 // copy of bit 7 of transfered value
@@ -353,7 +353,7 @@ extension Z80 {
         case 0xA3: // OUTI
             let value = await memory.read(from: HL)
             await performOut(port: C, map: B, value: value)
-            HL.inc()
+            HL = HL &+ 1
             await dec(.B)
             let bit1: UInt8 = (value & 0x80) >> 6 // copy of bit 7 of transfered value
             let calculation: UInt8 = value &+ L
@@ -368,9 +368,9 @@ extension Z80 {
         case 0xA8: // LDD
             let transferedByte = await memory.read(from: HL)
             await memory.write(to: DE, value: transferedByte)
-            DE.dec()
-            HL.dec()
-            BC.dec()
+            DE = DE &- 1
+            HL = HL &- 1
+            BC = BC &- 1
             let byteFor53 = transferedByte &+ A
             F = preserve(sign, zero, carry) | bits53ForCopy(byteFor53)
             ts = 16
@@ -378,8 +378,8 @@ extension Z80 {
 
         case 0xA9: // CPD
             let transferedByte = await memory.read(from: HL)
-            HL.dec()
-            BC.dec()
+            HL = HL &- 1
+            BC = BC &- 1
             let masks = carryHalfCarryOverflowCalculationSub(value: A, amount: transferedByte)
             let byteFor53 = A &- transferedByte &- (masks.halfCarryMask >> 4)
             F = preserve(carry) | masks.halfCarryMask | (sz53(masks.value) & 0xC0) | negative | bits53ForCopy(byteFor53)
@@ -390,7 +390,7 @@ extension Z80 {
         case 0xAA: // IND
             let value = await performIn(port: C, map: B)
             await memory.write(to: HL, value: value)
-            HL.dec()
+            HL = HL &- 1
             memptr = BC &- 1
             await dec(.B)
             let bit1: UInt8 = (value & 0x80) >> 6 // copy of bit 7 of transfered value
@@ -405,7 +405,7 @@ extension Z80 {
         case 0xAB: // OUTD
             let value = await memory.read(from: HL)
             await performOut(port: C, map: B, value: value)
-            HL.dec()
+            HL = HL &- 1
             await dec(.B)
             let bit1: UInt8 = (value & 0x80) >> 6 // copy of bit 7 of transfered value
             let calculation: UInt8 = value &+ L
@@ -419,7 +419,7 @@ extension Z80 {
         case 0xB0: // LDIR
             let transferedByte = await memory.read(from: HL)
             await memory.write(to: DE, value: transferedByte)
-            BC.dec()
+            BC = BC &- 1
             let byteFor53 = transferedByte &+ A
             F = preserve(sign, zero, carry) | bits53ForCopy(byteFor53)
             if BC != 0 {
@@ -429,14 +429,14 @@ extension Z80 {
             } else {
                 ts = 16
             }
-            DE.inc()
-            HL.inc()
+            DE = DE &+ 1
+            HL = HL &+ 1
 
 
         case 0xB1: // CPIR
             let transferedByte = await memory.read(from: HL)
-            HL.inc()
-            BC.dec()
+            HL = HL &+ 1
+            BC = BC &- 1
             let masks = carryHalfCarryOverflowCalculationSub(value: A, amount: transferedByte)
             let byteFor53 = A &- transferedByte &- (masks.halfCarryMask >> 4)
             F = preserve(carry) | masks.halfCarryMask | (sz53(masks.value) & 0xC0) | negative | bits53ForCopy(byteFor53)
@@ -454,7 +454,7 @@ extension Z80 {
             print("Process INIR")
             let value = await performIn(port: C, map: B)
             await memory.write(to: HL, value: value)
-            HL.inc()
+            HL = HL &+ 1
             memptr = BC &+ 1
             await dec(.B)
             let bit1: UInt8 = (value & 0x80) >> 6 // copy of bit 7 of transfered value
@@ -476,7 +476,7 @@ extension Z80 {
             print("Process OTIR")
             let value = await memory.read(from: HL)
             await performOut(port: C, map: B, value: value)
-            HL.inc()
+            HL = HL &+ 1
             await dec(.B)
             let bit1: UInt8 = (value & 0x80) >> 6 // copy of bit 7 of transfered value
             let calculation: UInt8 = value &+ L
@@ -496,9 +496,9 @@ extension Z80 {
         case 0xB8: // LDDR
             let transferedByte = await memory.read(from: HL)
             await memory.write(to: DE, value: transferedByte)
-            DE.dec()
-            HL.dec()
-            BC.dec()
+            DE = DE &- 1
+            HL = HL &- 1
+            BC = BC &- 1
             let byteFor53 = transferedByte &+ A
             F = preserve(sign, zero, carry) | bits53ForCopy(byteFor53)
             if BC != 0 {
@@ -512,8 +512,8 @@ extension Z80 {
 
         case 0xB9: // CPDR
             let transferedByte = await memory.read(from: HL)
-            HL.dec()
-            BC.dec()
+            HL = HL &- 1
+            BC = BC &- 1
             let masks = carryHalfCarryOverflowCalculationSub(value: A, amount: transferedByte)
             let byteFor53 = A &- transferedByte &- (masks.halfCarryMask >> 4)
             F = preserve(carry) | masks.halfCarryMask | (sz53(masks.value) & 0xC0) | negative | bits53ForCopy(byteFor53)
@@ -531,7 +531,7 @@ extension Z80 {
             print("Process INDR")
             let value = await performIn(port: C, map: B)
             await memory.write(to: HL, value: value)
-            HL.dec()
+            HL = HL &- 1
             memptr = BC &- 1
             await dec(.B)
             let bit1: UInt8 = (value & 0x80) >> 6 // copy of bit 7 of transfered value
@@ -552,7 +552,7 @@ extension Z80 {
             print("Process OTDR")
             let value = await memory.read(from: HL)
             await performOut(port: C, map: B, value: value)
-            HL.dec()
+            HL = HL &- 1
             await dec(.B)
             let bit1: UInt8 = (value & 0x80) >> 6 // copy of bit 7 of transfered value
             let calculation: UInt8 = value &+ L

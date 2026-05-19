@@ -87,9 +87,9 @@ extension Z80 {
         await pause()
         A = 0x00
         // Register Pairs
-        BC = 0x00
-        DE = 0x00
-        HL = 0x00
+        B = 0x00; C = 0x00
+        D = 0x00; E = 0x00
+        H = 0x00; L = 0x00
         // Shadow Register Pair
         AF2 = 0x0
         BC2 = 0x0

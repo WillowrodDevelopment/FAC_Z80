@@ -11,11 +11,11 @@ extension Z80 {
     func inc(pair: Z80RegisterPair) {
         switch pair {
         case .BC:
-            BC.inc()
+            BC = BC &+ 1
         case .DE:
-            DE.inc()
+            DE = DE &+ 1
         case .HL:
-            HL.inc()
+            HL = HL &+ 1
         case .AF:
             break
         }
@@ -24,11 +24,11 @@ extension Z80 {
     func add(pair: Z80RegisterPair, value: UInt16) {
         switch pair {
         case .BC:
-            BC.inc()
+            BC = BC &+ value
         case .DE:
-            DE.inc()
+            DE = DE &+ value
         case .HL:
-            HL.inc()
+            HL = HL &+ value
         case .AF:
             break
         }

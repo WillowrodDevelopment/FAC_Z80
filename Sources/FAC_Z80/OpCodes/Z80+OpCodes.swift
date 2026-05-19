@@ -37,7 +37,7 @@ extension Z80 {
             ts = 7
 
         case 0x03: // inc BC
-            BC.inc()
+            BC = BC &+ 1
             ts = 6
 
         case 0x04: // inc B
@@ -74,7 +74,7 @@ extension Z80 {
             ts = 7
 
         case 0x0B: // dec bc
-            BC.dec()
+            BC = BC &- 1
             ts = 6
 
         case 0x0C: // inc c
@@ -112,7 +112,7 @@ extension Z80 {
             ts = 7
 
         case 0x13:
-            DE.inc()
+            DE = DE &+ 1
             ts = 6
 
         case 0x14:
@@ -150,7 +150,7 @@ extension Z80 {
             await controller.memoryMap?.recordData(DE, value8Bit: A)
 
         case 0x1B: // dec de
-            DE.dec()
+            DE = DE &- 1
             ts = 6
 
         case 0x1C: // inc e
@@ -189,7 +189,7 @@ extension Z80 {
             await controller.memoryMap?.recordData(target, value16Bit: HL)
 
         case 0x23: // inc hl
-            HL.inc()
+            HL = HL &+ 1
             ts = 6
 
         case 0x24:
@@ -261,7 +261,7 @@ extension Z80 {
             await controller.memoryMap?.recordData(address, value16Bit: HL)
 
         case 0x2B: // dec hl
-            HL.dec()
+            HL = HL &- 1
             ts = 6
 
         case 0x2C:

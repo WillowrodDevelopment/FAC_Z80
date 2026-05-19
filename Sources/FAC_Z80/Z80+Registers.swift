@@ -10,62 +10,26 @@ import FAC_Common
 
 extension Z80 {
     
-    public var B : UInt8 {
-        get {return BC.highByte()}
-        set {
-            let low = BC.lowByte()
-            BC = (UInt16(newValue) * 256) + UInt16(low)
-        }
+    public var BC: UInt16 {
+        get { (UInt16(B) << 8) | UInt16(C) }
+        set { B = UInt8(newValue >> 8); C = UInt8(newValue & 0xFF) }
     }
 
-    public var C : UInt8 {
-        get {return BC.lowByte()}
-        set {
-            let high = UInt16(BC.highByte()) * 256
-            BC = high + UInt16(newValue)
-        }
+    public var DE: UInt16 {
+        get { (UInt16(D) << 8) | UInt16(E) }
+        set { D = UInt8(newValue >> 8); E = UInt8(newValue & 0xFF) }
     }
 
-    public var D : UInt8 {
-        get {return DE.highByte()}
-        set {
-            let low = DE.lowByte()
-            DE = (UInt16(newValue) * 256) + UInt16(low)
-        }
-    }
-
-    public var E : UInt8 {
-        get {return DE.lowByte()}
-        set {
-            let high = UInt16(DE.highByte()) * 256
-            DE = high + UInt16(newValue)
-        }
-    }
-
-    public var F: UInt8 {
-        get {return _F}
-        set {
-        //    modified53 = _F & 0x28 != newValue & 0x28
-            _F = newValue
-        }
-    }
-
-    public var H : UInt8 {
-        get {return HL.highByte()}
-        set {
-            let low = HL.lowByte()
-            HL = (UInt16(newValue) * 256) + UInt16(low)
-        }
-    }
-
-    public var L : UInt8 {
-        get {return HL.lowByte()}
-        set {
-            let high = UInt16(HL.highByte()) * 256
-            HL = high + UInt16(newValue)
-        }
+    public var HL: UInt16 {
+        get { (UInt16(H) << 8) | UInt16(L) }
+        set { H = UInt8(newValue >> 8); L = UInt8(newValue & 0xFF) }
     }
     
+    public var F: UInt8 {
+        get { _F }
+        set { _F = newValue }
+    }
+
     public var AF : UInt16 {
         get {
             let high = UInt16(A) * 256

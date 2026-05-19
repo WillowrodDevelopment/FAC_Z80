@@ -345,7 +345,7 @@ extension Z80 {
             ts = 11
 
         case 0x03: // inc BC  - Undocumented
-            BC.inc()
+            BC = BC &+ 1
             ts = 10
             
           
@@ -366,7 +366,7 @@ extension Z80 {
             ts = 11
 
         case 0x0B: // dec bc
-            BC.dec()
+            BC = BC &- 1
             ts = 10
             
         case 0x0F: // rrca
@@ -394,7 +394,7 @@ extension Z80 {
             ts = 11
 
         case 0x13:
-            DE.inc()
+            DE = DE &+ 1
             ts = 10
             
         case 0x17: // rla
@@ -414,7 +414,7 @@ extension Z80 {
             ts = 11
 
         case 0x1B: // dec de
-            DE.dec()
+            DE = DE &- 1
             ts = 10
             
         case 0x1F: // rra
