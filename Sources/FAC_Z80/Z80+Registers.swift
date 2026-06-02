@@ -41,6 +41,43 @@ extension Z80 {
         }
     }
 
+    // Sync helpers for register access (avoids async overhead for non-memory sources)
+    func registerValue(from source: UInt8) -> UInt8 {
+        switch source {
+        case 0x00: return B
+        case 0x01: return C
+        case 0x02: return D
+        case 0x03: return E
+        case 0x04: return H
+        case 0x05: return L
+        default:   return A
+        }
+    }
+
+    func writeToRegister(_ source: UInt8, value: UInt8) {
+        switch source {
+        case 0x00: B = value
+        case 0x01: C = value
+        case 0x02: D = value
+        case 0x03: E = value
+        case 0x04: H = value
+        case 0x05: L = value
+        default:   A = value
+        }
+    }
+
+    func indexRegisterValue(from source: UInt8, index: Z8016BitRegister) -> UInt8 {
+        switch source {
+        case 0x00: return B
+        case 0x01: return C
+        case 0x02: return D
+        case 0x03: return E
+        case 0x04: return index == .IX ? IX.highByte() : IY.highByte()
+        case 0x05: return index == .IX ? IX.lowByte() : IY.lowByte()
+        default:   return A
+        }
+    }
+
     func valueFromSource(source: UInt8, index: Z8016BitRegister? = nil) async -> UInt8 { //, displacement: UInt8 = 0x00
         switch source {
         case 0x00:

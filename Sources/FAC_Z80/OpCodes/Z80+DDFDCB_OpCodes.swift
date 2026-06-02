@@ -16,80 +16,63 @@ extension Z80 {
         let target = opCode >> 3
         let sourceValue = await memory.read(from: disIndex)
         var ts = 23
-        var mCycles = 2
+        let mCycles = 2
         switch target {
         case 0x00: // rlc
             let carryMask: UInt8 = (sourceValue & 0x80) > 0 ? 0x01 : 0x00
             let value = (sourceValue << 1) | carryMask
             await memory.write(to: disIndex, value: value)
-            if source != 0x06 {
-                await writeRegister(source, value: value)
-            }
+            if source != 0x06 { writeToRegister(source, value: value) }
             F = sz53pv(value) | carryMask
 
-
-            case 0x01: // rrc
-                let carryMask: UInt8 = sourceValue & 0x01
+        case 0x01: // rrc
+            let carryMask: UInt8 = sourceValue & 0x01
             let value = (sourceValue >> 1) | (carryMask > 0 ? 0x80 : 0x00)
             await memory.write(to: disIndex, value: value)
-            if source != 0x06 {
-                await writeRegister(source, value: value)
-            }
+            if source != 0x06 { writeToRegister(source, value: value) }
             F = sz53pv(value) | carryMask
 
-            case 0x02: // rl
-                let carryMask: UInt8 = (sourceValue & 0x80) > 0 ? 0x01 : 0x00
-                let value = (sourceValue << 1) | (F & carry)
+        case 0x02: // rl
+            let carryMask: UInt8 = (sourceValue & 0x80) > 0 ? 0x01 : 0x00
+            let value = (sourceValue << 1) | (F & carry)
             await memory.write(to: disIndex, value: value)
-            if source != 0x06 {
-                await writeRegister(source, value: value)
-            }
-                F = sz53pv(value) | carryMask
+            if source != 0x06 { writeToRegister(source, value: value) }
+            F = sz53pv(value) | carryMask
 
         case 0x03: // rr
             let carryMask: UInt8 = sourceValue & 0x01
-        let value = (sourceValue >> 1) | ((F & carry) > 0 ? 0x80 : 0x00)
+            let value = (sourceValue >> 1) | ((F & carry) > 0 ? 0x80 : 0x00)
             await memory.write(to: disIndex, value: value)
-            if source != 0x06 {
-                await writeRegister(source, value: value)
-            }
-        F = sz53pv(value) | carryMask
+            if source != 0x06 { writeToRegister(source, value: value) }
+            F = sz53pv(value) | carryMask
 
         case 0x04: // sla
             let carryMask: UInt8 = (sourceValue & 0x81)
-            let value = (sourceValue << 1) // | (carryMask & carry)
+            let value = (sourceValue << 1)
             await memory.write(to: disIndex, value: value)
-            if source != 0x06 {
-                await writeRegister(source, value: value)
-            }
+            if source != 0x06 { writeToRegister(source, value: value) }
             F = sz53pv(value) | (carryMask > 1 ? 0x01 : 0x00)
 
         case 0x05: // sra
             let carryMask: UInt8 = sourceValue & 0x81
             let value = (sourceValue >> 1) | (carryMask & sign)
             await memory.write(to: disIndex, value: value)
-            if source != 0x06 {
-                await writeRegister(source, value: value)
-            }
-        F = sz53pv(value) | (carryMask & carry)
+            if source != 0x06 { writeToRegister(source, value: value) }
+            F = sz53pv(value) | (carryMask & carry)
 
         case 0x06: // sll (UD)
             let carryMask: UInt8 = (sourceValue & 0x81)
             let value = (sourceValue << 1) | carry
             await memory.write(to: disIndex, value: value)
-            if source != 0x06 {
-                await writeRegister(source, value: value)
-            }
+            if source != 0x06 { writeToRegister(source, value: value) }
             F = sz53pv(value) | (carryMask > 1 ? 0x01 : 0x00)
 
         case 0x07: // srr
             let carryMask: UInt8 = sourceValue & 0x81
-            let value = (sourceValue >> 1)// | (carryMask & sign)
+            let value = (sourceValue >> 1)
             await memory.write(to: disIndex, value: value)
-            if source != 0x06 {
-                await writeRegister(source, value: value)
-            }
-        F = sz53pv(value) | (carryMask & carry)
+            if source != 0x06 { writeToRegister(source, value: value) }
+            F = sz53pv(value) | (carryMask & carry)
 
         case 0x08...0x0F: // Bit 0-7
             let bit = Int(target) - 8
@@ -104,27 +87,23 @@ extension Z80 {
                 carryMask = carryMask | bits53(disIndex.highByte())
             }
             F = halfCarry | carryMask
-ts = 20
+            ts = 20
 
         case 0x10...0x17:  // Res 0-7
             let bit = Int(target) - 0x10
             let value = sourceValue & ~(1 << bit)
             await memory.write(to: disIndex, value: value)
-            if source != 0x06 {
-                await writeRegister(source, value: value)
-            }
+            if source != 0x06 { writeToRegister(source, value: value) }
 
-        case 0x18...0x1F:  // Res 0-7
+        case 0x18...0x1F:  // Set 0-7
             let bit = Int(target) - 0x18
             let value = sourceValue | (1 << bit)
             await memory.write(to: disIndex, value: value)
-            if source != 0x06 {
-                await writeRegister(source, value: value)
-            }
+            if source != 0x06 { writeToRegister(source, value: value) }
 
         default:
             break
         }
         await mCyclesAndTStates(m: mCycles, t: ts)
     }
-    }
+}

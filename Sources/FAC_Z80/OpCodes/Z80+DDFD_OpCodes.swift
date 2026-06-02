@@ -163,7 +163,7 @@ extension Z80 {
         case 0x40...0x5F, 0x66, 0x6E, 0x78...0x7F: // ld r,r
             let source = opCode & 0x07
             let target = (opCode >> 3) & 0x07
-            let sourceValue = await valueFromSource(source: source, index: index)
+            let sourceValue = source == 0x06 ? await memory.read(from: displacedIndex(index, displacement: await next())) : indexRegisterValue(from: source, index: index)
             switch target {
             case 0x00:
                 B = sourceValue
@@ -192,19 +192,19 @@ extension Z80 {
 
         case 0x60...0x65, 0x67:
             let source = opCode & 0x07
-            let sourceValue = await valueFromSource(source: source, index: index)
+            let sourceValue = source == 0x06 ? await memory.read(from: displacedIndex(index, displacement: await next())) : indexRegisterValue(from: source, index: index)
             await writeIndex(index, value: await wordFrom(high: sourceValue, low: indexValue.lowByte()))
             ts = 8
 
         case 0x68...0x6D, 0x6F:
             let source = opCode & 0x07
-            let sourceValue = await valueFromSource(source: source, index: index)
+            let sourceValue = source == 0x06 ? await memory.read(from: displacedIndex(index, displacement: await next())) : indexRegisterValue(from: source, index: index)
             await writeIndex(index, value: await wordFrom(high: indexValue.highByte(), low: sourceValue))
             ts = 8
 
         case 0x70...0x75, 0x77:
             let source = opCode & 0x07
-            let sourceValue = await valueFromSource(source: source)
+            let sourceValue = registerValue(from: source)
             let displacedIndex = displacedIndex(index, displacement: await next())
             await memory.write(to: displacedIndex, value: sourceValue)
             ts = 19
@@ -212,7 +212,7 @@ extension Z80 {
 
         case 0x80...0x87: // add a,r
             let source = opCode & 0x07
-            let sourceValue = await valueFromSource(source: source, index: index)
+            let sourceValue = source == 0x06 ? await memory.read(from: displacedIndex(index, displacement: await next())) : indexRegisterValue(from: source, index: index)
             let masks = carryHalfCarryOverflowCalculationAdd(value: A, amount: sourceValue)
             A = masks.value
             F = masks.halfCarryMask | masks.overflowMask | masks.carryMask | sz53(A)
@@ -224,7 +224,7 @@ extension Z80 {
 
         case 0x88...0x8F: // adc a,r
             let source = opCode & 0x07
-            let sourceValue = await valueFromSource(source: source, index: index)
+            let sourceValue = source == 0x06 ? await memory.read(from: displacedIndex(index, displacement: await next())) : indexRegisterValue(from: source, index: index)
             let masks = carryHalfCarryOverflowCalculationAdd(value: A, amount: sourceValue, carryIn: F & carry)
             A = masks.value
             F = masks.halfCarryMask | masks.overflowMask | masks.carryMask | sz53(A)
@@ -236,7 +236,7 @@ extension Z80 {
 
         case 0x90...0x97: // sub a,r
             let source = opCode & 0x07
-            let sourceValue = await valueFromSource(source: source, index: index)
+            let sourceValue = source == 0x06 ? await memory.read(from: displacedIndex(index, displacement: await next())) : indexRegisterValue(from: source, index: index)
             let masks = carryHalfCarryOverflowCalculationSub(value: A, amount: sourceValue)
             A = masks.value
             F = masks.halfCarryMask | masks.overflowMask | masks.carryMask | sz53(A) | negative
@@ -248,7 +248,7 @@ extension Z80 {
 
         case 0x98...0x9f: // sbc a,r
             let source = opCode & 0x07
-            let sourceValue = await valueFromSource(source: source, index: index)
+            let sourceValue = source == 0x06 ? await memory.read(from: displacedIndex(index, displacement: await next())) : indexRegisterValue(from: source, index: index)
             let masks = carryHalfCarryOverflowCalculationSub(value: A, amount: sourceValue, carryIn: F & carry)
             A = masks.value
             F = masks.halfCarryMask | masks.overflowMask | masks.carryMask | sz53(A) | negative
@@ -260,7 +260,7 @@ extension Z80 {
 
         case 0xA0...0xA7: // and r
             let source = opCode & 0x07
-            let sourceValue = await valueFromSource(source: source, index: index)
+            let sourceValue = source == 0x06 ? await memory.read(from: displacedIndex(index, displacement: await next())) : indexRegisterValue(from: source, index: index)
             A = A & sourceValue
             F = sz53pv(A) | halfCarry
             if source == 0x06 {
@@ -271,7 +271,7 @@ extension Z80 {
 
         case 0xA8...0xAF: // xor r
             let source = opCode & 0x07
-            let sourceValue = await valueFromSource(source: source, index: index)
+            let sourceValue = source == 0x06 ? await memory.read(from: displacedIndex(index, displacement: await next())) : indexRegisterValue(from: source, index: index)
             A = A ^ sourceValue
             F = sz53pv(A)
             if source == 0x06 {
@@ -282,7 +282,7 @@ extension Z80 {
 
         case 0xB0...0xB7: //or r
             let source = opCode & 0x07
-            let sourceValue = await valueFromSource(source: source, index: index)
+            let sourceValue = source == 0x06 ? await memory.read(from: displacedIndex(index, displacement: await next())) : indexRegisterValue(from: source, index: index)
             A = A | sourceValue
             F = sz53pv(A)
             if source == 0x06 {
@@ -293,7 +293,7 @@ extension Z80 {
 
         case 0xB8...0xBF: // cp r
             let source = opCode & 0x07
-            let sourceValue = await valueFromSource(source: source, index: index)
+            let sourceValue = source == 0x06 ? await memory.read(from: displacedIndex(index, displacement: await next())) : indexRegisterValue(from: source, index: index)
             let masks = carryHalfCarryOverflowCalculationSub(value: A, amount: sourceValue)
             F = masks.halfCarryMask | masks.overflowMask | masks.carryMask | (sz53(masks.value) & 0xC0) | negative | bits53(sourceValue)
             if source == 0x06 {

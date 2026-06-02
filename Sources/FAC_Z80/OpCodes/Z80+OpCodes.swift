@@ -378,7 +378,7 @@ extension Z80 {
         case 0x40...0x6F, 0x78...0x7F: // ld r,r
             let source = opCode & 0x07
             let target = (opCode >> 3) & 0x07
-            let sourceValue = await valueFromSource(source: source)
+            let sourceValue = source == 0x06 ? await memory.read(from: HL) : registerValue(from: source)
             switch target {
             case 0x00:
                 B = sourceValue
@@ -408,7 +408,7 @@ extension Z80 {
         case 0x70...0x75, 0x77: // ld r,r
             let source = opCode & 0x07
             let target = (opCode >> 3) & 0x07
-            let sourceValue = await valueFromSource(source: source)
+            let sourceValue = source == 0x06 ? await memory.read(from: HL) : registerValue(from: source)
             switch target {
             case 0x00:
                 B = sourceValue
@@ -439,7 +439,7 @@ extension Z80 {
 
         case 0x80...0x87: // add a,r
             let source = opCode & 0x07
-            let sourceValue = await valueFromSource(source: source)
+            let sourceValue = source == 0x06 ? await memory.read(from: HL) : registerValue(from: source)
             let masks = carryHalfCarryOverflowCalculationAdd(value: A, amount: sourceValue)
             A = masks.value
             F = masks.halfCarryMask | masks.overflowMask | masks.carryMask | sz53(A)
@@ -449,7 +449,7 @@ extension Z80 {
 
         case 0x88...0x8F: // adc a,r
             let source = opCode & 0x07
-            let sourceValue = await valueFromSource(source: source)
+            let sourceValue = source == 0x06 ? await memory.read(from: HL) : registerValue(from: source)
             let masks = carryHalfCarryOverflowCalculationAdd(value: A, amount: sourceValue, carryIn: F & carry)
             A = masks.value
             F = masks.halfCarryMask | masks.overflowMask | masks.carryMask | sz53(A)
@@ -459,7 +459,7 @@ extension Z80 {
 
         case 0x90...0x97: // sub a,r
             let source = opCode & 0x07
-            let sourceValue = await valueFromSource(source: source)
+            let sourceValue = source == 0x06 ? await memory.read(from: HL) : registerValue(from: source)
             let masks = carryHalfCarryOverflowCalculationSub(value: A, amount: sourceValue)
             A = masks.value
             F = masks.halfCarryMask | masks.overflowMask | masks.carryMask | sz53(A) | negative
@@ -469,7 +469,7 @@ extension Z80 {
 
         case 0x98...0x9f: // sbc a,r
             let source = opCode & 0x07
-            let sourceValue = await valueFromSource(source: source)
+            let sourceValue = source == 0x06 ? await memory.read(from: HL) : registerValue(from: source)
             let masks = carryHalfCarryOverflowCalculationSub(value: A, amount: sourceValue, carryIn: F & carry)
             A = masks.value
             F = masks.halfCarryMask | masks.overflowMask | masks.carryMask | sz53(A) | negative
@@ -479,7 +479,7 @@ extension Z80 {
 
         case 0xA0...0xA7: // and r
             let source = opCode & 0x07
-            let sourceValue = await valueFromSource(source: source)
+            let sourceValue = source == 0x06 ? await memory.read(from: HL) : registerValue(from: source)
             A = A & sourceValue
             F = sz53pv(A) | halfCarry
             if source == 0x06 {
@@ -488,7 +488,7 @@ extension Z80 {
 
         case 0xA8...0xAF: // xor r
             let source = opCode & 0x07
-            let sourceValue = await valueFromSource(source: source)
+            let sourceValue = source == 0x06 ? await memory.read(from: HL) : registerValue(from: source)
             A = A ^ sourceValue
             F = sz53pv(A)
             if source == 0x06 {
@@ -497,7 +497,7 @@ extension Z80 {
 
         case 0xB0...0xB7: //or r
             let source = opCode & 0x07
-            let sourceValue = await valueFromSource(source: source)
+            let sourceValue = source == 0x06 ? await memory.read(from: HL) : registerValue(from: source)
             A = A | sourceValue
             F = sz53pv(A)
             if source == 0x06 {
@@ -506,7 +506,7 @@ extension Z80 {
 
         case 0xB8...0xBF: // cp r
             let source = opCode & 0x07
-            let sourceValue = await valueFromSource(source: source)
+            let sourceValue = source == 0x06 ? await memory.read(from: HL) : registerValue(from: source)
             let masks = carryHalfCarryOverflowCalculationSub(value: A, amount: sourceValue)
             F = masks.halfCarryMask | masks.overflowMask | masks.carryMask | (sz53(masks.value) & 0xC0) | negative | bits53(sourceValue)
             if source == 0x06 {
