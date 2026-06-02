@@ -10,9 +10,9 @@ import Foundation
 extension Z80 {
     // PC and SP Specific
     
-    func next() -> UInt8 {
+    func next() async -> UInt8 {
         let oPC = PC
-        let opcode = memoryRead(from: PC)
+        let opcode = await memory.read(from: PC)
 //        if stack.count >= 50 {
 //            stack.removeFirst()
 //        }
@@ -27,9 +27,9 @@ extension Z80 {
         return opcode
     }
     
-    func nextWord() -> UInt16 {
-        let low = next()
-        let high = next()
+    func nextWord() async -> UInt16 {
+        let low = await next()
+        let high = await next()
         return (UInt16(high) * 256) + UInt16(low)
     }
     
@@ -37,56 +37,54 @@ extension Z80 {
         PC -= value
     }
     
-    func relativeJump(twos: UInt8) {
+    func relativeJump(twos: UInt8) async {
+        let oldPC = PC
         let jump = PC &+ UInt16(twos & 0x7f) &- UInt16(twos & 0x80)
         PC = jump
         memptr = PC
-        if controller.recordingJumpMap && jump > 0x4000 {
-            if !controller.jumpMap.contains(jump){
-                loggingService.log("New jump: \(jump) - \(jump.hex())")
-                controller.jumpMap.insert(jump)
-            }
-        }
+        await controller.memoryMap?.recordJump(jump, from: oldPC)
     }
     
-    func push(_ value: UInt16) {
+    func push(_ value: UInt16) async {
         SP = SP &- 2
-        memoryWriteWord(to: SP, value: value)
+        await memory.writeWord(to: SP, value: value)
 //        stack.append(value)
 //        controlDelegate?.updateStack(stack)
     }
     
-    func pop() -> UInt16 {
+    func pop() async -> UInt16 {
 //        if stackSize == 0 {
 //            logDelegate?.logError("Stack overflow")
 //        } else {
 //            stack.removeLast()
 //            controlDelegate?.updateStack(stack)
 //        }
-        let rtn = memoryReadWord(from: SP)
+        let rtn = await memory.readWord(from: SP)
         SP = SP &+ 2
         stackSize -= 1
         return rtn
     }
     
-    func ret() {
-        PC = pop()
+    func ret() async {
+        PC = await pop()
         memptr = PC
     }
     
-    func jump(_ target: UInt16) {
+    func jump(_ target: UInt16) async {
+        let oldPC = PC
         PC = target
         memptr = PC
-        if controller.recordingJumpMap && target > 0x4000 {
-            if !controller.jumpMap.contains(target){
-                loggingService.log("New target: \(target) - \(target.hex())")
-                controller.jumpMap.insert(target)
-            }
-        }
+       await controller.memoryMap?.recordJump(target, from: oldPC)
+//        if controller.recordingJumpMap && target > 0x4000 {
+//            if !controller.jumpMap.contains(target){
+//                loggingService.log("New target: \(target) - \(target.hex())")
+//                controller.jumpMap.insert(target)
+//            }
+//        }
     }
     
-    public func resetProcessor() {
-        pause()
+    public func resetProcessor() async {
+        await pause()
         A = 0x00
         // Register Pairs
         BC = 0x00
@@ -116,19 +114,19 @@ extension Z80 {
         iff1 = 0x00
         iff2 = 0x00
 
-             hardwarePorts.reset()
-             updatePort(port: 0xfe, bit: 1, set: false)
-             updatePort(port: 0xfd, bit: 1, set: false)
-             updatePort(port: 0xfb, bit: 1, set: false)
-             updatePort(port: 0xf7, bit: 1, set: false)
-             updatePort(port: 0xef, bit: 1, set: false)
-             updatePort(port: 0xdf, bit: 1, set: false)
-             updatePort(port: 0xbf, bit: 1, set: false)
-             updatePort(port: 0x7f, bit: 1, set: false)
+             await hardwarePorts.reset()
+        await updatePort(port: 0xfe, bit: 1, set: false)
+        await updatePort(port: 0xfd, bit: 1, set: false)
+        await updatePort(port: 0xfb, bit: 1, set: false)
+        await updatePort(port: 0xf7, bit: 1, set: false)
+        await updatePort(port: 0xef, bit: 1, set: false)
+        await updatePort(port: 0xdf, bit: 1, set: false)
+        await updatePort(port: 0xbf, bit: 1, set: false)
+        await updatePort(port: 0x7f, bit: 1, set: false)
   
         
         
-        standard()
+        await standard()
         
     }
 }

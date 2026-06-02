@@ -8,7 +8,7 @@
 import Foundation
 
 extension Z80 {
-    func inc(_ register: Z808BitRegister) {
+    func inc(_ register: Z808BitRegister) async {
         var masks = initialMasks
         switch register {
         case .A:
@@ -47,7 +47,7 @@ extension Z80 {
         F = (F & carry) | masks.halfCarryMask | masks.overflowMask | sz53(masks.value)
     }
 
-    func dec(_ register: Z808BitRegister) {
+    func dec(_ register: Z808BitRegister) async {
         var masks = initialMasks
         switch register {
         case .A:
@@ -86,24 +86,24 @@ extension Z80 {
         F = (F & carry) | masks.halfCarryMask | masks.overflowMask | sz53(masks.value) | negative
     }
 
-    func inc(_ index: Z8016BitRegister, isHigh: Bool) {
+    func inc(_ index: Z8016BitRegister, isHigh: Bool) async {
         var masks = initialMasks
         switch index {
         case .IX:
             if isHigh {
                 masks = halfCarryOverflowCalculationAdd(value: IX.highByte(), amount: 0x01)
-                writeIndex(index, value: wordFrom(high: masks.value, low: IX.lowByte()))
+                await writeIndex(index, value: wordFrom(high: masks.value, low: IX.lowByte()))
             } else {
                 masks = halfCarryOverflowCalculationAdd(value: IX.lowByte(), amount: 0x01)
-                writeIndex(index, value: wordFrom(high: IX.highByte(), low: masks.value))
+                await writeIndex(index, value: wordFrom(high: IX.highByte(), low: masks.value))
             }
         case .IY:
             if isHigh {
                 masks = halfCarryOverflowCalculationAdd(value: IY.highByte(), amount: 0x01)
-                writeIndex(index, value: wordFrom(high: masks.value, low: IY.lowByte()))
+                await writeIndex(index, value: wordFrom(high: masks.value, low: IY.lowByte()))
             } else {
                 masks = halfCarryOverflowCalculationAdd(value: IY.lowByte(), amount: 0x01)
-                writeIndex(index, value: wordFrom(high: IY.highByte(), low: masks.value))
+                await writeIndex(index, value: wordFrom(high: IY.highByte(), low: masks.value))
             }
         default:
             break
@@ -111,24 +111,24 @@ extension Z80 {
         F = (F & carry) | masks.halfCarryMask | masks.overflowMask | sz53(masks.value)
     }
 
-    func dec(_ index: Z8016BitRegister, isHigh: Bool) {
+    func dec(_ index: Z8016BitRegister, isHigh: Bool) async {
         var masks = initialMasks
         switch index {
         case .IX:
             if isHigh {
                 masks = halfCarryOverflowCalculationSub(value: IX.highByte(), amount: 0x01)
-                writeIndex(index, value: wordFrom(high: masks.value, low: IX.lowByte()))
+                await writeIndex(index, value: wordFrom(high: masks.value, low: IX.lowByte()))
             } else {
                 masks = halfCarryOverflowCalculationSub(value: IX.lowByte(), amount: 0x01)
-                writeIndex(index, value: wordFrom(high: IX.highByte(), low: masks.value))
+                await writeIndex(index, value: wordFrom(high: IX.highByte(), low: masks.value))
             }
         case .IY:
             if isHigh {
                 masks = halfCarryOverflowCalculationSub(value: IY.highByte(), amount: 0x01)
-                writeIndex(index, value: wordFrom(high: masks.value, low: IY.lowByte()))
+                await writeIndex(index, value: wordFrom(high: masks.value, low: IY.lowByte()))
             } else {
                 masks = halfCarryOverflowCalculationSub(value: IY.lowByte(), amount: 0x01)
-                writeIndex(index, value: wordFrom(high: IY.highByte(), low: masks.value))
+                await writeIndex(index, value: wordFrom(high: IY.highByte(), low: masks.value))
             }
         default:
             break
@@ -137,7 +137,7 @@ extension Z80 {
         F = (F & carry) | masks.halfCarryMask | masks.overflowMask | sz53(masks.value) | negative
     }
 
-    func rlc(_ register: Z808BitRegister) {
+    func rlc(_ register: Z808BitRegister) async {
         var masks: (value: UInt8, carryMask: UInt8) = (value: 0x00, carryMask: 0x00)
         switch register {
         case .A:
@@ -176,7 +176,7 @@ extension Z80 {
         F = sz53pv(masks.value) | masks.carryMask
     }
 
-    func rrc(_ register: Z808BitRegister) {
+    func rrc(_ register: Z808BitRegister) async {
         var masks: (value: UInt8, carryMask: UInt8) = (value: 0x00, carryMask: 0x00)
         switch register {
         case .A:
@@ -215,7 +215,7 @@ extension Z80 {
         F = sz53pv(masks.value) | masks.carryMask
     }
 
-    func rl(_ register: Z808BitRegister) {
+    func rl(_ register: Z808BitRegister) async {
         var masks: (value: UInt8, carryMask: UInt8) = (value: 0x00, carryMask: 0x00)
         switch register {
         case .A:
@@ -254,7 +254,7 @@ extension Z80 {
         F = sz53pv(masks.value) | masks.carryMask
     }
 
-    func rr(_ register: Z808BitRegister) {
+    func rr(_ register: Z808BitRegister) async {
             var masks: (value: UInt8, carryMask: UInt8) = (value: 0x00, carryMask: 0x00)
             switch register {
             case .A:
@@ -293,7 +293,7 @@ extension Z80 {
             F = sz53pv(masks.value) | masks.carryMask
         }
 
-    func wordFrom(high: UInt8, low: UInt8) -> UInt16 {
+    func wordFrom(high: UInt8, low: UInt8) async -> UInt16 {
         return (UInt16(high) * 256) + UInt16(low)
     }
     

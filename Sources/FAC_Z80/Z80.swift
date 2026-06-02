@@ -16,15 +16,10 @@ open class Z80 {
     public var logDelegate: Z80LoggingDelegate?
     public var controlDelegate: Z80ControlDelegate?
     
-    
-  //  public var memory: [UInt8] = []
-  //  public var memoryBlocks: [[UInt8]] = []
-    
-    public var rom:[[UInt8]] = [[],[]]
-    public var ram:[[UInt8]] = [[]]
-    
     public var romSelected = 0
     public var ramSelected = 0
+    
+    let memory: MemoryDelegate
     
     var stack: [UInt16] = []
     
@@ -128,10 +123,10 @@ open class Z80 {
     
     let loggingService = LoggingService.shared
     
-    public init() {
-        //memory = Array(repeating: 0x01, count: 65536)
+    public init(memory: MemoryDelegate) {
+        self.memory = memory
         calculateTables()
-    //    startProcess()
+        controller.cpuLog = Z80Log(cpu: self)
     }
      
     public let controller = Z80Controller.shared
@@ -146,7 +141,7 @@ open class Z80 {
         }
     }
     
-    open func fps() {
+    open func fps() async {
         
         if controller.processorSpeed != .paused {
             let seconds = Int(Date().timeIntervalSince1970 - startTime)
@@ -162,47 +157,59 @@ open class Z80 {
         }
     }
     
-    open func display() {
+    open func display() async {
         // Override to handle screen writes
-        fps()
+        await fps()
     }
     
-    public func haltInterupts() {
+    public func haltInterupts() async {
         
-        pause()
+        await pause()
         iff1Temp = iff1
         iff2Temp = iff2
         iff1 = 0
         iff2 = 0
     }
     
-    public func resumeInterupts() {
+    public func resumeInterupts() async {
         iff1 = iff1Temp
         iff2 = iff2Temp
     }
     
-    open func mCyclesAndTStates(m: Int, t: Int) {
+    open func mCyclesAndTStates(m: Int, t: Int) async {
         tStates += t
         let bit7 = R & 0x80
         R = ((R &+ UInt8(m)) & 0x7F) | bit7
         if tStates >= tStatesPerFrame {
             tStates = 0
-            render()
+            await render()
         }
+        await controller.memoryMap?.recordPC(PC)
+    }
+    
+    open func preProcess() async {
+//        if PC >= 0xF66C && PC <= 0xF68E {
+//            loggingService.log("Reading: \(PC.hex())")
+//        }
+    }
+    
+    open func postProcess() async {
+        
     }
     
     open func preInPerform() {
         
     }
     
-    open func memoryWrite(to: UInt16, value: UInt8) {
-        internalMemoryWrite(to: to, value: value)
-    }
-    
-
-    open func memoryRead(from: UInt16) -> UInt8 {
-        internalMemoryRead(from: from)
-    }
+//    open func await memory.write(to: UInt16, value: UInt8) async {
+//        //internalawait memory.write(to: to, value: value)
+//        await memory.write(to: to, value: value)
+//    }
+//    
+//
+//    open func await memory.read(from: UInt16) async -> UInt8 {
+//        internalawait memory.read(from: from)
+//    }
     
     
 }
@@ -215,7 +222,27 @@ public class Z80Controller {
     // **** Speed Control ****
     public var processorSpeed: Z80ProcessorSpeed = .standard
     
-    public var recordingJumpMap = false
-    public var jumpMap: Set<UInt16> = []
+    public var memoryMap: Z80MemoryMap? = nil
+    public var storedMemoryMap: Z80MemoryMap? = nil
+    public var cpuLog: Z80Log? = nil
+    
     public var showingSettings = false
+    
+    func setJumpMapActive() {
+        memoryMap = Z80MemoryMap()
+    }
+    
+    func setJumpMapInactive() {
+        storedMemoryMap = memoryMap
+        memoryMap = nil
+    }
+    
+    public func toggleJumpMap() {
+        if let memoryMap {
+            setJumpMapInactive()
+        } else {
+            setJumpMapActive()
+        }
+    }
 }
+
