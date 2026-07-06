@@ -114,7 +114,7 @@ extension Z80 {
         iff1 = 0x00
         iff2 = 0x00
 
-             await hardwarePorts.reset()
+        await hardwarePorts.reset()
         await updatePort(port: 0xfe, bit: 1, set: false)
         await updatePort(port: 0xfd, bit: 1, set: false)
         await updatePort(port: 0xfb, bit: 1, set: false)
@@ -124,7 +124,6 @@ extension Z80 {
         await updatePort(port: 0xbf, bit: 1, set: false)
         await updatePort(port: 0x7f, bit: 1, set: false)
   
-        
         
         await standard()
         

@@ -315,6 +315,9 @@ extension Z80 {
 
         case 0xA0: // LDI
             let transferedByte = await memory.read(from: HL)
+            if DE >= 0x4000 && DE <= 0x57FF {
+                await controller.memoryMap?.recordGraphicsSource(HL)
+            }
             await memory.write(to: DE, value: transferedByte)
             DE.inc()
             HL.inc()
@@ -367,6 +370,9 @@ extension Z80 {
 
         case 0xA8: // LDD
             let transferedByte = await memory.read(from: HL)
+            if DE >= 0x4000 && DE <= 0x57FF {
+                await controller.memoryMap?.recordGraphicsSource(HL)
+            }
             await memory.write(to: DE, value: transferedByte)
             DE.dec()
             HL.dec()
@@ -418,6 +424,9 @@ extension Z80 {
 
         case 0xB0: // LDIR
             let transferedByte = await memory.read(from: HL)
+            if DE >= 0x4000 && DE <= 0x57FF {
+                await controller.memoryMap?.recordGraphicsSource(HL)
+            }
             await memory.write(to: DE, value: transferedByte)
             BC.dec()
             let byteFor53 = transferedByte &+ A
@@ -495,6 +504,9 @@ extension Z80 {
 
         case 0xB8: // LDDR
             let transferedByte = await memory.read(from: HL)
+            if DE >= 0x4000 && DE <= 0x57FF {
+                await controller.memoryMap?.recordGraphicsSource(HL)
+            }
             await memory.write(to: DE, value: transferedByte)
             DE.dec()
             HL.dec()

@@ -13,6 +13,7 @@ public actor Z80MemoryMap {
     public var dataMap16Bit: [UInt16: UInt16] = [:]
     public var ixyMap: Set<UInt16> = []
     public var stackMap: Set<UInt16> = []
+    public var graphicsSourceMap: Set<UInt16> = []
     public var showingSettings = false
     
     
@@ -72,6 +73,18 @@ public actor Z80MemoryMap {
     
     public func fetch16BitData() -> [(UInt16, UInt16)] {
         return dataMap16Bit.map { ($0.key, $0.value) }.sorted(by: { $0.0 < $1.0 })
+    }
+    
+    public func recordGraphicsSource(_ addr: UInt16) {
+        graphicsSourceMap.insert(addr)
+    }
+    
+    public func fetchGraphicsSources() -> [UInt16] {
+        graphicsSourceMap.sorted()
+    }
+    
+    public func clearGraphicsSources() {
+        graphicsSourceMap.removeAll()
     }
     
     public func fetchJumpMap() -> [MemoryLocation] {

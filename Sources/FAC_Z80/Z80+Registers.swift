@@ -115,6 +115,7 @@ extension Z80 {
             if let index {
                 return await memory.read(from: displacedIndex(index, displacement: next()))
             }
+            await controller.memoryMap?.recordGraphicsSource(HL)
             return await memory.read(from: HL)
         case 0x07:
             return A
