@@ -16,15 +16,8 @@ extension Z80 {
         while shouldProcess {
 
             if controller.processorSpeed == .paused {
-  //               A small 'hack' to stop the processor freezing when going into a pause state.
-//                Task {
-//                    do{
-//                        try await Task.sleep(nanoseconds: UInt64(0.001 * Double(NSEC_PER_SEC)))
-//                    } catch {
-//                        print("Sleep error - \(error.localizedDescription)")
-//                    }
-//                }
                 await render()
+                try? await Task.sleep(nanoseconds: 16_000_000)
                 let _ = controller.processorSpeed
             } else {
                 await preProcess()
@@ -40,9 +33,11 @@ extension Z80 {
     
     func render() async {
         if controller.processorSpeed != .paused {
-            while frameStarted + (1.0 / Double(controller.processorSpeed.rawValue)) >= Date().timeIntervalSince1970 {
-                // Idle while we wait for frame to catch up
-                
+            let targetTime = frameStarted + (1.0 / Double(controller.processorSpeed.rawValue))
+            let now = Date().timeIntervalSince1970
+            if targetTime > now {
+                let sleepNanos = UInt64((targetTime - now) * 1_000_000_000)
+                try? await Task.sleep(nanoseconds: sleepNanos)
             }
             frameStarted = Date().timeIntervalSince1970
             frameCompleted = false

@@ -17,7 +17,7 @@ extension Z80 {
             await mCyclesAndTStates(m: 1, t: 4)
             return
         }
-        let oldPC = PC
+        lastFetchPC = PC
 
         let opCode = await next()
         var ts = 4

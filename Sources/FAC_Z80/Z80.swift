@@ -97,6 +97,7 @@ open class Z80 {
     public var modified53 = true
 
     public var memptr: UInt16 = 0x00
+    public var lastFetchPC: UInt16 = 0x00
 
     // **** Hardware ****
     public var hardwarePorts = HardwarePorts()
