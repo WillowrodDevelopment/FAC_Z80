@@ -9,12 +9,13 @@ import Foundation
 
 public actor Z80MemoryMap {
     public var jumpMap: [UInt16: MemoryLocation] = [:]
-    public var dataMap8Bit: [UInt16: UInt8] = [:]
-    public var dataMap16Bit: [UInt16: UInt16] = [:]
+    public var dataMap8Bit: [UInt16: [UInt8]] = [:]
+    public var dataMap16Bit: [UInt16: [UInt16]] = [:]
     public var ixyMap: Set<UInt16> = []
     public var stackMap: Set<UInt16> = []
     public var graphicsSourceMap: Set<UInt16> = []
     public var showingSettings = false
+    private let maxDataHistory = 100
     
     
     public var pcTrace: [UInt16] = []
@@ -50,10 +51,24 @@ public actor Z80MemoryMap {
     public func recordData(_ data: UInt16, value8Bit: UInt8? = nil, value16Bit: UInt16? = nil) {
         if data > 0x5800 {
             if let value8Bit {
-                dataMap8Bit[data] = value8Bit
+                var history = dataMap8Bit[data] ?? []
+                if history.last != value8Bit {
+                    history.append(value8Bit)
+                    if history.count > maxDataHistory {
+                        history.removeFirst(history.count - maxDataHistory)
+                    }
+                    dataMap8Bit[data] = history
+                }
             }
             if let value16Bit {
-                dataMap16Bit[data] = value16Bit
+                var history = dataMap16Bit[data] ?? []
+                if history.last != value16Bit {
+                    history.append(value16Bit)
+                    if history.count > maxDataHistory {
+                        history.removeFirst(history.count - maxDataHistory)
+                    }
+                    dataMap16Bit[data] = history
+                }
             }
         }
     }
@@ -68,11 +83,23 @@ public actor Z80MemoryMap {
     }
     
     public func fetch8BitData() -> [(UInt16, UInt8)] {
-        return dataMap8Bit.map { ($0.key, $0.value) }.sorted(by: { $0.0 < $1.0 })
+        return dataMap8Bit.compactMap { key, value in value.last.map { (key, $0) } }.sorted(by: { $0.0 < $1.0 })
     }
     
     public func fetch16BitData() -> [(UInt16, UInt16)] {
+        return dataMap16Bit.compactMap { key, value in value.last.map { (key, $0) } }.sorted(by: { $0.0 < $1.0 })
+    }
+    
+    public func fetch8BitDataHistory() -> [(UInt16, [UInt8])] {
+        return dataMap8Bit.map { ($0.key, $0.value) }.sorted(by: { $0.0 < $1.0 })
+    }
+    
+    public func fetch16BitDataHistory() -> [(UInt16, [UInt16])] {
         return dataMap16Bit.map { ($0.key, $0.value) }.sorted(by: { $0.0 < $1.0 })
+    }
+    
+    public func fetchPCTrace() -> [UInt16] {
+        return pcTrace
     }
     
     public func recordGraphicsSource(_ addr: UInt16) {
