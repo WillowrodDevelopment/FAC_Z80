@@ -32,6 +32,7 @@ extension Z80 {
     }
     
     func render() async {
+        controller.frameCount += 1
         if controller.processorSpeed != .paused {
             let targetTime = frameStarted + (1.0 / Double(controller.processorSpeed.rawValue))
             let now = Date().timeIntervalSince1970

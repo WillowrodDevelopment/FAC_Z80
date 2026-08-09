@@ -235,6 +235,8 @@ public class Z80Controller {
     public var isStepping = false
     public var breakpointsEnabled = false
     
+    public var frameCount = 0
+    
     func setJumpMapActive() {
         memoryMap = Z80MemoryMap()
     }

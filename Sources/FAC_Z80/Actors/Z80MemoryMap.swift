@@ -16,6 +16,11 @@ public actor Z80MemoryMap {
     public var graphicsSourceMap: Set<UInt16> = []
     public var showingSettings = false
     private let maxDataHistory = 100
+    private var onNewJumpEntry: ((UInt16) -> Void)? = nil
+
+    public func setOnNewJumpEntry(_ handler: ((UInt16) -> Void)?) {
+        onNewJumpEntry = handler
+    }
     
     
     public var pcTrace: [UInt16] = []
@@ -33,6 +38,7 @@ public actor Z80MemoryMap {
         if jump > 0x5800 {
             if jumpMap[jump] == nil {
                 jumpMap[jump] = MemoryLocation(location: jump, from: from)
+                onNewJumpEntry?(jump)
                 return
             }
             jumpMap[jump] = jumpMap[jump]?.update(from: from)
