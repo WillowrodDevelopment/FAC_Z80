@@ -229,6 +229,12 @@ public class Z80Controller {
     
     public var showingSettings = false
     
+    // **** Breakpoints ****
+    public var breakpoints: Set<UInt16> = []
+    public var breakpointHit: UInt16? = nil
+    public var isStepping = false
+    public var breakpointsEnabled = false
+    
     func setJumpMapActive() {
         memoryMap = Z80MemoryMap()
     }

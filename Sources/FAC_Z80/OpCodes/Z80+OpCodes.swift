@@ -18,6 +18,11 @@ extension Z80 {
             return
         }
         lastFetchPC = PC
+        if controller.breakpointsEnabled, !controller.isStepping, controller.breakpoints.contains(PC) {
+            controller.breakpointHit = PC
+            controller.processorSpeed = .paused
+            return
+        }
 
         let opCode = await next()
         var ts = 4

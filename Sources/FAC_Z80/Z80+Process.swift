@@ -82,11 +82,20 @@ extension Z80 {
     public func resume() async {
         print("standard")
         await invalidateTimer()
+        controller.breakpointHit = nil
         controller.processorSpeed = .standard
     }
     public func pause() async {
             print("paused")
         await invalidateTimer()
+        controller.processorSpeed = .paused
+    }
+    
+    public func step() async {
+        guard !controller.isStepping else { return }
+        controller.isStepping = true
+        await fetchAndExecute()
+        controller.isStepping = false
         controller.processorSpeed = .paused
     }
     public func fast() async {
