@@ -230,10 +230,23 @@ public class Z80Controller {
     public var showingSettings = false
     
     // **** Breakpoints ****
-    public var breakpoints: Set<UInt16> = []
+    public private(set) var breakpoints: Set<UInt16> = []
     public var breakpointHit: UInt16? = nil
     public var isStepping = false
     public var breakpointsEnabled = false
+    private let breakpointsLock = NSLock()
+    
+    public func setBreakpoints(_ newValue: Set<UInt16>) {
+        breakpointsLock.lock()
+        breakpoints = newValue
+        breakpointsLock.unlock()
+    }
+    
+    public func containsBreakpoint(_ address: UInt16) -> Bool {
+        breakpointsLock.lock()
+        defer { breakpointsLock.unlock() }
+        return breakpoints.contains(address)
+    }
     
     public var frameCount = 0
     

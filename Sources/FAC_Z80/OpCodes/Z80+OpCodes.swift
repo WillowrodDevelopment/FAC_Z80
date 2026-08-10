@@ -18,7 +18,7 @@ extension Z80 {
             return
         }
         lastFetchPC = PC
-        if controller.breakpointsEnabled, !controller.isStepping, controller.breakpoints.contains(PC) {
+        if controller.breakpointsEnabled, !controller.isStepping, controller.containsBreakpoint(PC) {
             controller.breakpointHit = PC
             controller.processorSpeed = .paused
             return
