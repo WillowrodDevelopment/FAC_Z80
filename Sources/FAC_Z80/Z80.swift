@@ -18,6 +18,33 @@ open class Z80 {
     
     public var romSelected = 0
     public var ramSelected = 0
+    public var screenShadow = false
+    public var is128k = false
+    
+    /// Canonical (bank, address) for a 16-bit address, given the current paging state.
+    /// Bank 5 -> 0x4000-0x7FFF, bank 2 -> 0x8000-0xBFFF, all other banks -> 0xC000-0xFFFF.
+    /// Bank 2/5 content paged into 0xC000 is aliased back to its fixed home.
+    /// For the 48k (is128k == false) the bank is always 0 and the address is unchanged.
+    public func canonicalBankAddress(for addr: UInt16) -> BankedAddress {
+        guard is128k else { return BankedAddress(bank: 0, address: addr) }
+        let a = Int(addr)
+        switch a {
+        case ...0x3FFF:
+            return BankedAddress(bank: 0, address: addr)
+        case ...0x7FFF:
+            let bank = screenShadow ? 7 : 5
+            if bank == 5 { return BankedAddress(bank: 5, address: addr) }
+            return BankedAddress(bank: 7, address: UInt16(0xC000 + (a & 0x3FFF)))
+        case ...0xBFFF:
+            return BankedAddress(bank: 2, address: addr)
+        default:
+            switch ramSelected {
+            case 2: return BankedAddress(bank: 2, address: UInt16(0x8000 + (a & 0x3FFF)))
+            case 5: return BankedAddress(bank: 5, address: UInt16(0x4000 + (a & 0x3FFF)))
+            default: return BankedAddress(bank: ramSelected, address: addr)
+            }
+        }
+    }
     
     let memory: MemoryDelegate
     
@@ -95,6 +122,8 @@ open class Z80 {
     let sign: UInt8 = 0x80
 
     public var modified53 = true
+
+    public var q: UInt8 = 0x00
 
     public var memptr: UInt16 = 0x00
     public var lastFetchPC: UInt16 = 0x00
@@ -202,6 +231,16 @@ open class Z80 {
         
     }
     
+    // Port I/O hooks - overridable so specific computers (e.g. the ZX
+    // Spectrum 128k) can intercept memory paging and sound chip ports.
+    open func writePort(lower: UInt8, upper: UInt8?, value: UInt8) async {
+        await hardwarePorts.performOut(lower: lower, upper: upper, value: value)
+    }
+    
+    open func readPort(lower: UInt8, upper: UInt8) async -> UInt8 {
+        await hardwarePorts.performIn(lower: lower, upper: upper)
+    }
+    
 //    open func await memory.write(to: UInt16, value: UInt8) async {
 //        //internalawait memory.write(to: to, value: value)
 //        await memory.write(to: to, value: value)
@@ -211,6 +250,16 @@ open class Z80 {
 //    open func await memory.read(from: UInt16) async -> UInt8 {
 //        internalawait memory.read(from: from)
 //    }
+    
+    /// Restarts the emulation process. Subclasses can override to reset
+    /// machine-specific state (e.g. 128k paging) before the CPU restarts.
+    open func reboot() async {
+        await pause()
+        shouldProcess = false
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.2) { // Change `2.0` to the desired number of seconds.
+            self.startProcess()
+        }
+    }
     
     
 }

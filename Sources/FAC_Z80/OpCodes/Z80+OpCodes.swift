@@ -152,7 +152,7 @@ extension Z80 {
             A = await memory.read(from: DE)
             memptr = DE &+ 1
             ts = 7
-            await controller.memoryMap?.recordData(DE, value8Bit: A)
+            await recordDataBanked(DE, value8Bit: A)
 
         case 0x1B: // dec de
             DE.dec()
@@ -191,7 +191,7 @@ extension Z80 {
             await memory.writeWord(to: target, value: HL)
             memptr = target &+ 1
             ts = 16
-            await controller.memoryMap?.recordData(target, value16Bit: HL)
+            await recordDataBanked(target, value16Bit: HL)
 
         case 0x23: // inc hl
             HL.inc()
@@ -263,7 +263,7 @@ extension Z80 {
             HL = await memory.readWord(from: address)
             memptr = address &+ 1
             ts = 16
-            await controller.memoryMap?.recordData(address, value16Bit: HL)
+            await recordDataBanked(address, value16Bit: HL)
 
         case 0x2B: // dec hl
             HL.dec()
@@ -299,7 +299,7 @@ extension Z80 {
         case 0x32: // ld (nn), a
             let target = await nextWord()
             await memory.write(to: target, value: A)
-            await controller.memoryMap?.recordData(target, value8Bit: A)
+            await recordDataBanked(target, value8Bit: A)
             memptr = await wordFrom(high: A, low: (target.lowByte() &+ 1))
             ts = 13
 
@@ -311,27 +311,28 @@ extension Z80 {
             let masks = halfCarryOverflowCalculationAdd(value: await memory.read(from: HL), amount: 0x01)
             // memory[Int(HL)] = masks.value
             await memory.write(to: HL, value: masks.value)
-            await controller.memoryMap?.recordData(HL, value8Bit: masks.value)
+            await recordDataBanked(HL, value8Bit: masks.value)
             F = (F & carry) | masks.halfCarryMask | masks.overflowMask | sz53(masks.value)
             ts = 11
 
         case 0x35:
             let masks = halfCarryOverflowCalculationSub(value: await memory.read(from: HL), amount: 0x01)
             await memory.write(to: HL, value: masks.value)
-            await controller.memoryMap?.recordData(HL, value8Bit: masks.value)
+            await recordDataBanked(HL, value8Bit: masks.value)
             F = (F & carry) | masks.halfCarryMask | masks.overflowMask | sz53(masks.value) | negative
             ts = 11
 
         case 0x36:
             let nxt = await next()
             await memory.write(to: HL, value: nxt)
-            //await controller.memoryMap?.recordData(HL, value8Bit: nxt)
+            //await recordDataBanked(HL, value8Bit: nxt)
             ts = 10
 
         case 0x37: // scf
             let preserved = preserve(sign, zero, parityOverflow)
-            let fiveThree = A & 0x28 //modified53 ? F & 0x28 :
+            let fiveThree = (q == 0 ? F & 0x28 : 0x00) | (A & 0x28)
             F = preserved | carry | fiveThree
+            q = F
             break
 
         case 0x38: // jr c, dis
@@ -356,7 +357,7 @@ extension Z80 {
             memptr = target &+ 1
             A = await memory.read(from: target)  //memory[target]
             ts = 13
-            await controller.memoryMap?.recordData(target, value8Bit: A)
+            await recordDataBanked(target, value8Bit: A)
 
         case 0x3B: // dec SP
             SP.dec()
@@ -374,10 +375,11 @@ extension Z80 {
 
         case 0x3F: // ccf
             let preserved = preserve(sign, zero, parityOverflow)
-            let fiveThree = modified53 ? F & 0x28 : A & 0x28
+            let fiveThree = (q == 0 ? F & 0x28 : 0x00) | (A & 0x28)
             let hFlag = (F & carry) << 4
             let cFlag = hFlag > 0 ? 0x00 : carry
             F = preserved | cFlag | hFlag | fiveThree
+            q = F
 
             
         case 0x40...0x6F, 0x78...0x7F: // ld r,r
@@ -432,7 +434,7 @@ extension Z80 {
             case 0x07:
                 A = sourceValue
                 if source == 0x07 {
-                    await controller.memoryMap?.recordData(HL, value8Bit: A)
+                    await recordDataBanked(HL, value8Bit: A)
                 }
             default:
                 break

@@ -501,8 +501,9 @@ extension Z80 {
             
         case 0x37: // scf
             let preserved = preserve(sign, zero, parityOverflow)
-            let fiveThree = A & 0x28 //modified53 ? F & 0x28 :
+            let fiveThree = (q == 0 ? F & 0x28 : 0x00) | (A & 0x28)
             F = preserved | carry | fiveThree
+            q = F
             break
 
         case 0x38: // jr c, dis
@@ -526,10 +527,11 @@ extension Z80 {
             
         case 0x3F: // ccf
             let preserved = preserve(sign, zero, parityOverflow)
-            let fiveThree = modified53 ? F & 0x28 : A & 0x28
+            let fiveThree = (q == 0 ? F & 0x28 : 0x00) | (A & 0x28)
             let hFlag = (F & carry) << 4
             let cFlag = hFlag > 0 ? 0x00 : carry
             F = preserved | cFlag | hFlag | fiveThree
+            q = F
             
             
         case 0x76: // halt

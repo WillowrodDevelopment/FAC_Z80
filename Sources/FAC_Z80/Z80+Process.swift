@@ -68,7 +68,7 @@ extension Z80 {
                     let oldPC = PC
                     let intAddress = (UInt16(I) * 256) + 0xff // Assume the databus will send 0xFF as no external hardware available
                     PC = await memory.readWord(from: intAddress)
-                    await controller.memoryMap?.recordJump(PC, type: .IM2, from: oldPC)
+                    await recordJumpBanked(PC, type: .IM2, from: oldPC)
                 }
             }
         }
@@ -120,13 +120,5 @@ extension Z80 {
     
     @objc func fireTimer() {
      //   display()
-    }
-    
-    public func reboot() async {
-        await pause()
-        shouldProcess = false
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.2) { // Change `2.0` to the desired number of seconds.
-            self.startProcess()
-        }
     }
 }

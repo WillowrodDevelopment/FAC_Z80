@@ -115,7 +115,7 @@ extension Z80 {
             if let index {
                 return await memory.read(from: displacedIndex(index, displacement: next()))
             }
-            await controller.memoryMap?.recordGraphicsSource(HL)
+            await recordGraphicsSourceBanked(HL)
             return await memory.read(from: HL)
         case 0x07:
             return A
@@ -276,7 +276,9 @@ extension Z80 {
             PC = pc
         }
         
-        
+        await fetchRegisterData().forEach{ rg in
+            loggingService.log("rg.key: \(rg.key) rg.value: \(rg.value)")
+        }
         
     }
     
@@ -292,13 +294,19 @@ extension Z80 {
                 "BC": BC.hex(),
                 "DE": DE.hex(),
                 "HL": HL.hex(),
+                "AF2": AF2.hex(),
+                "BC2": BC2.hex(),
+                "DE2": DE2.hex(),
+                "HL2": HL2.hex(),
+                "IY": IY.hex(),
+                "IX": IX.hex(),
                 "PC": PC.hex(),
                 "SP": SP.hex(),
                 "I": I.hex(),
                 "R": R.hex(),
                 "IM": String(interuptMode),
-                "IFF1": String(iff1),
-                "IFF2": String(iff2)
+                "IFF1": iff1 == 0 ? "DISABLED" : "ENABLED",
+                "IFF2": iff2 == 0 ? "DISABLED" : "ENABLED"
     ]
     }
     

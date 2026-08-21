@@ -20,6 +20,9 @@ import Foundation
     
     public func performIn(lower: UInt8, upper: UInt8 = 0x00)  -> UInt8 {
         let portID = "\(upper.hex())\(lower.hex())"
+        if let setValue = activeHardwarePorts[portID] {
+            return setValue
+        }
 //        if (portID == "00fe") {
 //            let p1 = getPort(port: "fefe")
 //            let p2 = getPort(port: "FDFE")

@@ -9,7 +9,7 @@ import Foundation
 
 public extension Z80 {
     func performIn(port: UInt8, map: UInt8? = nil) async -> UInt8 {
-        return await hardwarePorts.performIn(lower: port, upper: map ?? 0x00)
+        return await readPort(lower: port, upper: map ?? 0x00)
     }
     
     func performSinglePortIn(lower: UInt8) async -> UInt8 {
@@ -17,7 +17,7 @@ public extension Z80 {
     }
 
     func performOut(port: UInt8, map: UInt8? = nil, value: UInt8) async {
-        await hardwarePorts.performOut(lower: port, upper: map, value: value)
+        await writePort(lower: port, upper: map, value: value)
     }
     
     func updatePort(port: UInt8, bit: Int, set: Bool) async {

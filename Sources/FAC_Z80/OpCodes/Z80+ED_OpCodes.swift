@@ -316,7 +316,7 @@ extension Z80 {
         case 0xA0: // LDI
             let transferedByte = await memory.read(from: HL)
             if DE >= 0x4000 && DE <= 0x57FF {
-                await controller.memoryMap?.recordGraphicsSource(HL)
+                await recordGraphicsSourceBanked(HL)
             }
             await memory.write(to: DE, value: transferedByte)
             DE.inc()
@@ -371,7 +371,7 @@ extension Z80 {
         case 0xA8: // LDD
             let transferedByte = await memory.read(from: HL)
             if DE >= 0x4000 && DE <= 0x57FF {
-                await controller.memoryMap?.recordGraphicsSource(HL)
+                await recordGraphicsSourceBanked(HL)
             }
             await memory.write(to: DE, value: transferedByte)
             DE.dec()
@@ -425,22 +425,22 @@ extension Z80 {
         case 0xB0: // LDIR
             let transferedByte = await memory.read(from: HL)
             if DE >= 0x4000 && DE <= 0x57FF {
-                await controller.memoryMap?.recordGraphicsSource(HL)
+                await recordGraphicsSourceBanked(HL)
             }
             await memory.write(to: DE, value: transferedByte)
             BC.dec()
             let byteFor53 = transferedByte &+ A
             F = preserve(sign, zero, carry) | bits53ForCopy(byteFor53)
+            DE.inc()
+            HL.inc()
             if BC != 0 {
                 PC = PC &- 2
                 memptr = PC &+ 1
+                F = (F & (sign | zero | carry | parityOverflow)) | bits35FromPC(PC)
                 ts = 21
             } else {
                 ts = 16
             }
-            DE.inc()
-            HL.inc()
-
 
         case 0xB1: // CPIR
             let transferedByte = await memory.read(from: HL)
@@ -452,6 +452,7 @@ extension Z80 {
             if BC != 0 && A != transferedByte {
                 PC = PC &- 2
                 memptr = PC &+ 1
+                F = (F & (sign | zero | carry | parityOverflow | negative | halfCarry)) | bits35FromPC(PC)
                 ts = 21
             } else {
                 ts = 16
@@ -460,44 +461,43 @@ extension Z80 {
 
 
         case 0xB2: // INIR
-            print("Process INIR")
             let value = await performIn(port: C, map: B)
             await memory.write(to: HL, value: value)
             HL.inc()
             memptr = BC &+ 1
             await dec(.B)
-            let bit1: UInt8 = (value & 0x80) >> 6 // copy of bit 7 of transfered value
-            let calculation: UInt8 = value &+ C &+ 1
-            let calcUInt16: UInt16 = UInt16(value) + ((UInt16(C) + 1) & 0xFF)
-            let bits0And4: UInt8 = (calcUInt16 > 0xFF ? 0x11 : 0x00) // If overflows
-            let parityCalculation: UInt8 = UInt8(calcUInt16 & 0x07) ^ B
-            let bit2: UInt8 = parityBit[parityCalculation]
-            F = sz53(B) | bits0And4 | bit1 | bit2
+            let sum16 = UInt16(UInt8(C &+ 1)) &+ UInt16(value)
+            let carryFlag: UInt8 = sum16 > 0xFF ? carry : 0
+            let nFlag: UInt8 = (value & 0x80) >> 6
+            let pvFlag: UInt8 = parityBit[UInt8(sum16 & 0x07) ^ B]
             if B != 0 {
                 PC = PC &- 2
+                let adj = blockRepeatFlagAdjustment(carryFlag: carryFlag, nFlag: nFlag, pvFlag: pvFlag, b: B, pc: PC)
+                F = (sz53(B) & (sign | zero)) | adj.bits35 | adj.h | adj.pv | nFlag | carryFlag
                 ts = 21
             } else {
+                F = (sz53(B) & (sign | zero)) | (B & (three | five)) | (carryFlag << 4) | pvFlag | nFlag | carryFlag
                 ts = 16
             }
 
 
         case 0xB3: // OTIR
-            print("Process OTIR")
             let value = await memory.read(from: HL)
             await performOut(port: C, map: B, value: value)
             HL.inc()
             await dec(.B)
-            let bit1: UInt8 = (value & 0x80) >> 6 // copy of bit 7 of transfered value
-            let calculation: UInt8 = value &+ L
-            let bits0And4: UInt8 = (calculation >= value ? 0x00 : 0x11) // If overflows
-            let parityCalculation: UInt8 = (calculation & 0x07) ^ B
-            let bit2: UInt8 = parityBit[parityCalculation]
-            F = sz53(B) | bits0And4 | bit1 | bit2
+            let sum16 = UInt16(UInt8(L)) &+ UInt16(value)
+            let carryFlag: UInt8 = sum16 > 0xFF ? carry : 0
+            let nFlag: UInt8 = (value & 0x80) >> 6
+            let pvFlag: UInt8 = parityBit[UInt8(sum16 & 0x07) ^ B]
             memptr = BC &+ 1
             if B != 0 {
                 PC = PC &- 2
+                let adj = blockRepeatFlagAdjustment(carryFlag: carryFlag, nFlag: nFlag, pvFlag: pvFlag, b: B, pc: PC)
+                F = (sz53(B) & (sign | zero)) | adj.bits35 | adj.h | adj.pv | nFlag | carryFlag
                 ts = 21
             } else {
+                F = (sz53(B) & (sign | zero)) | (B & (three | five)) | (carryFlag << 4) | pvFlag | nFlag | carryFlag
                 ts = 16
             }
 
@@ -505,7 +505,7 @@ extension Z80 {
         case 0xB8: // LDDR
             let transferedByte = await memory.read(from: HL)
             if DE >= 0x4000 && DE <= 0x57FF {
-                await controller.memoryMap?.recordGraphicsSource(HL)
+                await recordGraphicsSourceBanked(HL)
             }
             await memory.write(to: DE, value: transferedByte)
             DE.dec()
@@ -516,6 +516,7 @@ extension Z80 {
             if BC != 0 {
                 PC = PC &- 2
                 memptr = PC &+ 1
+                F = (F & (sign | zero | carry | parityOverflow)) | bits35FromPC(PC)
                 ts = 21
             } else {
                 ts = 16
@@ -532,6 +533,7 @@ extension Z80 {
             if BC != 0 && A != transferedByte {
                 PC = PC &- 2
                 memptr = PC &+ 1
+                F = (F & (sign | zero | carry | parityOverflow | negative | halfCarry)) | bits35FromPC(PC)
                 ts = 21
             } else {
                 memptr = memptr &+ 1
@@ -540,43 +542,43 @@ extension Z80 {
 
 
         case 0xBA: // INDR
-            print("Process INDR")
             let value = await performIn(port: C, map: B)
             await memory.write(to: HL, value: value)
             HL.dec()
             memptr = BC &- 1
             await dec(.B)
-            let bit1: UInt8 = (value & 0x80) >> 6 // copy of bit 7 of transfered value
-            let calculation: UInt8 = value &+ C &- 1
-            let bits0And4: UInt8 = (calculation >= value ? 0x00 : 0x11) // If overflows
-            let parityCalculation: UInt8 = (calculation & 0x07) ^ B
-            let bit2: UInt8 = parityBit[parityCalculation]
-            F = sz53(B) | bits0And4 | bit1 | bit2
+            let sum16 = UInt16(UInt8(C &- 1)) &+ UInt16(value)
+            let carryFlag: UInt8 = sum16 > 0xFF ? carry : 0
+            let nFlag: UInt8 = (value & 0x80) >> 6
+            let pvFlag: UInt8 = parityBit[UInt8(sum16 & 0x07) ^ B]
             if B != 0 {
                 PC = PC &- 2
+                let adj = blockRepeatFlagAdjustment(carryFlag: carryFlag, nFlag: nFlag, pvFlag: pvFlag, b: B, pc: PC)
+                F = (sz53(B) & (sign | zero)) | adj.bits35 | adj.h | adj.pv | nFlag | carryFlag
                 ts = 21
             } else {
+                F = (sz53(B) & (sign | zero)) | (B & (three | five)) | (carryFlag << 4) | pvFlag | nFlag | carryFlag
                 ts = 16
             }
 
 
         case 0xBB: // OTDR
-            print("Process OTDR")
             let value = await memory.read(from: HL)
             await performOut(port: C, map: B, value: value)
             HL.dec()
             await dec(.B)
-            let bit1: UInt8 = (value & 0x80) >> 6 // copy of bit 7 of transfered value
-            let calculation: UInt8 = value &+ L
-            let bits0And4: UInt8 = (calculation >= value ? 0x00 : 0x11) // If overflows
-            let parityCalculation: UInt8 = (calculation & 0x07) ^ B
-            let bit2: UInt8 = parityBit[parityCalculation]
-            F = sz53(B) | bits0And4 | bit1 | bit2
+            let sum16 = UInt16(UInt8(L)) &+ UInt16(value)
+            let carryFlag: UInt8 = sum16 > 0xFF ? carry : 0
+            let nFlag: UInt8 = (value & 0x80) >> 6
+            let pvFlag: UInt8 = parityBit[UInt8(sum16 & 0x07) ^ B]
             memptr = BC &- 1
             if B != 0 {
                 PC = PC &- 2
+                let adj = blockRepeatFlagAdjustment(carryFlag: carryFlag, nFlag: nFlag, pvFlag: pvFlag, b: B, pc: PC)
+                F = (sz53(B) & (sign | zero)) | adj.bits35 | adj.h | adj.pv | nFlag | carryFlag
                 ts = 21
             } else {
+                F = (sz53(B) & (sign | zero)) | (B & (three | five)) | (carryFlag << 4) | pvFlag | nFlag | carryFlag
                 ts = 16
             }
             
@@ -588,5 +590,26 @@ extension Z80 {
             ts = 8
         }
         await mCyclesAndTStates(m: mCycles, t: ts)
+    }
+
+    func blockRepeatFlagAdjustment(carryFlag: UInt8, nFlag: UInt8, pvFlag: UInt8, b: UInt8, pc: UInt16) -> (pv: UInt8, h: UInt8, bits35: UInt8) {
+        var pv = pvFlag
+        var h = carryFlag
+        if carryFlag != 0 {
+            if nFlag != 0 {
+                pv = (pv == parityBit[(b &- 1) & 0x07]) ? parityOverflow : 0
+                h = (b & 0x0F) == 0 ? halfCarry : 0
+            } else {
+                pv = (pv == parityBit[(b &+ 1) & 0x07]) ? parityOverflow : 0
+                h = (b & 0x0F) == 0x0F ? halfCarry : 0
+            }
+        } else {
+            pv = (pv == parityBit[b & 0x07]) ? parityOverflow : 0
+        }
+        return (pv, h, bits35FromPC(pc))
+    }
+
+    func bits35FromPC(_ pc: UInt16) -> UInt8 {
+        UInt8(((pc >> 13) & 1) << 5) | UInt8(((pc >> 11) & 1) << 3)
     }
 }
