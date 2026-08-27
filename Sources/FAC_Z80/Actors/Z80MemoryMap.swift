@@ -49,7 +49,7 @@ public actor Z80MemoryMap {
     }
     
     public func recordJump(_ jump: BankedAddress, type: MemoryLocationType = .Jump, from: BankedAddress) {
-        if jump.address > 0x5800 {
+        if jump.bank < 0 || jump.address > 0x5800 {
             if jumpMap[jump] == nil {
                 jumpMap[jump] = MemoryLocation(banked: jump, from: from.address)
                 onNewJumpEntry?(jump.address)

@@ -22,27 +22,23 @@ open class Z80 {
     public var is128k = false
     
     /// Canonical (bank, address) for a 16-bit address, given the current paging state.
-    /// Bank 5 -> 0x4000-0x7FFF, bank 2 -> 0x8000-0xBFFF, all other banks -> 0xC000-0xFFFF.
-    /// Bank 2/5 content paged into 0xC000 is aliased back to its fixed home.
+    /// ROMs use negative bank numbers: -1 is ROM 0 and -2 is ROM 1.
     /// For the 48k (is128k == false) the bank is always 0 and the address is unchanged.
     public func canonicalBankAddress(for addr: UInt16) -> BankedAddress {
         guard is128k else { return BankedAddress(bank: 0, address: addr) }
         let a = Int(addr)
         switch a {
         case ...0x3FFF:
-            return BankedAddress(bank: 0, address: addr)
+            // Negative bank numbers identify ROMs and cannot collide with RAM bank 0.
+            return BankedAddress(bank: -(romSelected + 1), address: addr)
         case ...0x7FFF:
             let bank = screenShadow ? 7 : 5
-            if bank == 5 { return BankedAddress(bank: 5, address: addr) }
-            return BankedAddress(bank: 7, address: UInt16(0xC000 + (a & 0x3FFF)))
+            return BankedAddress(bank: bank, address: addr)
         case ...0xBFFF:
             return BankedAddress(bank: 2, address: addr)
         default:
-            switch ramSelected {
-            case 2: return BankedAddress(bank: 2, address: UInt16(0x8000 + (a & 0x3FFF)))
-            case 5: return BankedAddress(bank: 5, address: UInt16(0x4000 + (a & 0x3FFF)))
-            default: return BankedAddress(bank: ramSelected, address: addr)
-            }
+            // Keep the address in the window where it was observed.
+            return BankedAddress(bank: ramSelected, address: addr)
         }
     }
     
@@ -316,4 +312,3 @@ public class Z80Controller {
         }
     }
 }
-
