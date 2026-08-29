@@ -268,6 +268,10 @@ public class Z80Controller {
     // **** Speed Control ****
     public var processorSpeed: Z80ProcessorSpeed = .standard
     
+    /// Set by the app when the app enters background (scenePhase != .active).
+    /// The emulation loop idles at ~1 FPS and stops rendering while true.
+    public var isAppInBackground = false
+    
     public var memoryMap: Z80MemoryMap? = nil
     public var storedMemoryMap: Z80MemoryMap? = nil
     public var cpuLog: Z80Log? = nil

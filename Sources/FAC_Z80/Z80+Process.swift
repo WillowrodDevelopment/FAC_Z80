@@ -15,20 +15,20 @@ extension Z80 {
         await standard()
         while shouldProcess {
 
-            if controller.processorSpeed == .paused {
-                await render()
-                try? await Task.sleep(nanoseconds: 16_000_000)
-                let _ = controller.processorSpeed
+            if controller.processorSpeed == .paused || controller.isAppInBackground {
+                // Paused / backgrounded: show the static frame and idle at ~1 FPS.
+                // No display() call — the last rendered frame stays on screen.
+                try? await Task.sleep(nanoseconds: 1_000_000_000)
             } else {
                 await preProcess()
-                //Task {
-                await fetchAndExecute() //   await 
-                //}
+                await fetchAndExecute()
                 await postProcess()
             }
             
         }
+#if DEBUG
         print("Process complete")
+#endif
     }
     
     func render() async {
@@ -81,13 +81,17 @@ extension Z80 {
     }
     
     public func resume() async {
+#if DEBUG
         print("standard")
+#endif
         await invalidateTimer()
         controller.breakpointHit = nil
         controller.processorSpeed = .standard
     }
     public func pause() async {
-            print("paused")
+#if DEBUG
+        print("paused")
+#endif
         await invalidateTimer()
         controller.processorSpeed = .paused
     }
@@ -99,14 +103,10 @@ extension Z80 {
         controller.isStepping = false
         controller.processorSpeed = .paused
     }
-    public func fast() async {
-        print("turbo")
-        await invalidateTimer()
-        controller.processorSpeed = .turbo
-    }
-    
     public func unrestricted() async {
+#if DEBUG
         print("unrestricted")
+#endif
         await invalidateTimer()
         displayTimer = Timer.scheduledTimer(timeInterval: 0.1, target: self, selector: #selector(fireTimer), userInfo: nil, repeats: true)
         displayTimer?.fire()
