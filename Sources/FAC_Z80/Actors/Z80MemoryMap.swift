@@ -21,7 +21,8 @@ public struct BankedAddress: Hashable, Codable {
     }
 }
 
-public actor Z80MemoryMap {
+public final class Z80MemoryMap: @unchecked Sendable {
+    private let lock = NSLock()
     public var jumpMap: [BankedAddress: MemoryLocation] = [:]
     public var dataMap8Bit: [BankedAddress: [UInt8]] = [:]
     public var dataMap16Bit: [BankedAddress: [UInt16]] = [:]

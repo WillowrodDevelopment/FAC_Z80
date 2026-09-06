@@ -103,6 +103,7 @@ open class Z80 {
 
     var frameCompleted = false
     var frameStarted: TimeInterval = Date().timeIntervalSince1970
+    var lastDisplayTime: TimeInterval = 0
     
     public var isInHaltState = false
     
@@ -185,7 +186,6 @@ open class Z80 {
     
     open func display() async {
         // Override to handle screen writes
-        await fps()
     }
     
     public func haltInterupts() async {
@@ -202,15 +202,37 @@ open class Z80 {
         iff2 = iff2Temp
     }
     
-    open func mCyclesAndTStates(m: Int, t: Int) async {
+    /// Synchronously accumulates cycle counts and R refresh for an instruction.
+    /// Sets `frameBoundaryHit` when a frame's t-state budget is consumed so the
+    /// async renderer can be invoked once per frame by the process loop.
+    func accumulate(m: Int, t: Int) {
         tStates += t
         let bit7 = R & 0x80
         R = ((R &+ UInt8(m)) & 0x7F) | bit7
         if tStates >= tStatesPerFrame {
             tStates = 0
+            frameBoundaryHit = true
+        }
+        if controller.memoryMap != nil {
+            controller.memoryMap?.recordPC(PC)
+        }
+    }
+
+    var frameBoundaryHit = false
+
+    /// Called once after each instruction's cycles are accumulated. Overridable so a
+    /// computer can perform per-instruction work (border tracking, tape feeding)
+    /// synchronously on the emulation thread. `t` is the instruction's t-state count.
+    open func postInstruction(t: Int) {
+    }
+
+    open func mCyclesAndTStates(m: Int, t: Int) async {
+        accumulate(m: m, t: t)
+        if frameBoundaryHit {
+            frameBoundaryHit = false
+            await fps()
             await render()
         }
-        await controller.memoryMap?.recordPC(PC)
     }
     
     open func preProcess() async {
@@ -229,22 +251,22 @@ open class Z80 {
     
     // Port I/O hooks - overridable so specific computers (e.g. the ZX
     // Spectrum 128k) can intercept memory paging and sound chip ports.
-    open func writePort(lower: UInt8, upper: UInt8?, value: UInt8) async {
-        await hardwarePorts.performOut(lower: lower, upper: upper, value: value)
+    open func writePort(lower: UInt8, upper: UInt8?, value: UInt8) {
+        hardwarePorts.performOut(lower: lower, upper: upper, value: value)
     }
     
-    open func readPort(lower: UInt8, upper: UInt8) async -> UInt8 {
-        await hardwarePorts.performIn(lower: lower, upper: upper)
+    open func readPort(lower: UInt8, upper: UInt8) -> UInt8 {
+        hardwarePorts.performIn(lower: lower, upper: upper)
     }
     
-//    open func await memory.write(to: UInt16, value: UInt8) async {
-//        //internalawait memory.write(to: to, value: value)
-//        await memory.write(to: to, value: value)
+//    open func memory.write(to: UInt16, value: UInt8) async {
+//        //internalmemory.write(to: to, value: value)
+//        memory.write(to: to, value: value)
 //    }
 //    
 //
-//    open func await memory.read(from: UInt16) async -> UInt8 {
-//        internalawait memory.read(from: from)
+//    open func memory.read(from: UInt16) async -> UInt8 {
+//        internalmemory.read(from: from)
 //    }
     
     /// Restarts the emulation process. Subclasses can override to reset

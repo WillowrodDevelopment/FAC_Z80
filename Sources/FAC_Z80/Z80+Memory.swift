@@ -9,7 +9,7 @@
 //import FAC_Common
 //
 //extension Z80 {
-//    func internalawait memory.write(to: UInt16, value: UInt8) {
+//    func internalmemory.write(to: UInt16, value: UInt8) {
 ////        // Should protect ROM for Sinclair computers
 ////        switch to {
 ////        case ...0x3FFF:
@@ -38,7 +38,7 @@
 ////        return myRam
 ////    }
 //
-//    func internalawait memory.read(from: UInt16) -> UInt8 {
+//    func internalmemory.read(from: UInt16) -> UInt8 {
 ////        switch from {
 ////        case ...0x3FFF:
 ////            return rom[romSelected][Int(from)]
@@ -55,14 +55,14 @@
 //        return memory.read(from: from)
 //    }
 //
-//    func await memory.writeWord(to: UInt16, value: UInt16) {
-//        await memory.write(to: to, value: value.lowByte())
-//        await memory.write(to: (to &+ 1), value: value.highByte())
+//    func memory.writeWord(to: UInt16, value: UInt16) {
+//        memory.write(to: to, value: value.lowByte())
+//        memory.write(to: (to &+ 1), value: value.highByte())
 //    }
 //
-//    func await memory.readWord(from: UInt16) -> UInt16 {
-////        let low = await memory.read(from: from)  //memory[Int(from)]
-////        let high = await memory.read(from: (from &+ 1)) //memory[Int(from &+ 1)]
+//    func memory.readWord(from: UInt16) -> UInt16 {
+////        let low = memory.read(from: from)  //memory[Int(from)]
+////        let high = memory.read(from: (from &+ 1)) //memory[Int(from &+ 1)]
 ////        return (UInt16(high) * 256) + UInt16(low)
 //        memory.readWord(from: from)
 //    }
@@ -74,22 +74,22 @@
 //    }
 //    
 //    
-////    public func await memory.write(to: UInt16, value: UInt8) {
+////    public func memory.write(to: UInt16, value: UInt8) {
 ////        // Should protect ROM for Sinclair computers
 ////        memory[Int(to)] = value
 ////    }
 ////
-////    func await memory.read(from: UInt16) -> UInt8 {
+////    func memory.read(from: UInt16) -> UInt8 {
 ////        return memory[Int(from)]
 ////    }
 ////
-////    func await memory.writeWord(to: UInt16, value: UInt16) {
+////    func memory.writeWord(to: UInt16, value: UInt16) {
 ////        // Should protect ROM for Sinclair computers
 ////        memory[Int(to)] = value.lowByte()
 ////        memory[Int(to &+ 1)] = value.highByte()
 ////    }
 ////
-////    func await memory.readWord(from: UInt16) -> UInt16 {
+////    func memory.readWord(from: UInt16) -> UInt16 {
 ////        let low = memory[Int(from)]
 ////        let high = memory[Int(from &+ 1)]
 ////        return (UInt16(high) * 256) + UInt16(low)

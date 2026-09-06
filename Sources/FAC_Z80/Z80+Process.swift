@@ -21,7 +21,12 @@ extension Z80 {
                 try? await Task.sleep(nanoseconds: 1_000_000_000)
             } else {
                 await preProcess()
-                await fetchAndExecute()
+                fetchAndExecute()
+                if frameBoundaryHit {
+                    frameBoundaryHit = false
+                    await fps()
+                    await render()
+                }
                 await postProcess()
             }
             
@@ -43,10 +48,18 @@ extension Z80 {
             frameStarted = Date().timeIntervalSince1970
             frameCompleted = false
         }
-    //    if controller.processorSpeed != .unrestricted {
-        await display()
-     //   }
-        await handleInterupt()
+        // In unrestricted mode the CPU runs flat out: display is throttled to
+        // ~50fps (every 20ms) so screen rendering can't become the bottleneck.
+        if controller.processorSpeed == .unrestricted {
+            let now = Date().timeIntervalSince1970
+            if now - lastDisplayTime >= 0.02 {
+                lastDisplayTime = now
+                await display()
+            }
+        } else {
+            await display()
+        }
+        handleInterupt()
 //        if loggingService.isLoggingProcessor {
 //                   loggingService.logProcessor(message: lastPCValues.map{"\($0)"}.joined(separator: "-"))
 //                   lastPCValues.removeAll()
@@ -54,11 +67,11 @@ extension Z80 {
    
     }
     
-    private func handleInterupt() async {
+    private func handleInterupt() {
         if controller.processorSpeed != .paused {
             if iff2 == 1 { // If IFF2 is enabled, run the selected interupt mode
                 isInHaltState = false
-                await push(PC)
+                push(PC)
                 switch interuptMode {
                 case 0:
                     PC = 0x0066 // Unused on the ZX Spectrum
@@ -67,8 +80,8 @@ extension Z80 {
                 default:
                     let oldPC = PC
                     let intAddress = (UInt16(I) * 256) + 0xff // Assume the databus will send 0xFF as no external hardware available
-                    PC = await memory.readWord(from: intAddress)
-                    await recordJumpBanked(PC, type: .IM2, from: oldPC)
+                    PC = memory.readWord(from: intAddress)
+                    recordJumpBanked(PC, type: .IM2, from: oldPC)
                 }
             }
         }
@@ -99,7 +112,12 @@ extension Z80 {
     public func step() async {
         guard !controller.isStepping else { return }
         controller.isStepping = true
-        await fetchAndExecute()
+        fetchAndExecute()
+        if frameBoundaryHit {
+            frameBoundaryHit = false
+            await fps()
+            await render()
+        }
         controller.isStepping = false
         controller.processorSpeed = .paused
     }

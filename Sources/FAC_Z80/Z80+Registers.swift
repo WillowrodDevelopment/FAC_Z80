@@ -77,7 +77,7 @@ extension Z80 {
         }
     }
 
-    func valueFromSource(source: UInt8, index: Z8016BitRegister? = nil) async -> UInt8 { //, displacement: UInt8 = 0x00
+    func valueFromSource(source: UInt8, index: Z8016BitRegister? = nil) -> UInt8 { //, displacement: UInt8 = 0x00
         switch source {
         case 0x00:
             return B
@@ -113,10 +113,10 @@ extension Z80 {
             return L
         case 0x06:
             if let index {
-                return await memory.read(from: displacedIndex(index, displacement: next()))
+                return memory.read(from: displacedIndex(index, displacement: next()))
             }
-            await recordGraphicsSourceBanked(HL)
-            return await memory.read(from: HL)
+            recordGraphicsSourceBanked(HL)
+            return memory.read(from: HL)
         case 0x07:
             return A
         default:
@@ -125,7 +125,7 @@ extension Z80 {
         }
     }
 
-    func valueOfIndex(index: Z8016BitRegister) async -> UInt16 {
+    func valueOfIndex(index: Z8016BitRegister) -> UInt16 {
         switch index {
         case .PC:
             return PC
@@ -140,49 +140,49 @@ extension Z80 {
         }
     }
 
-    func writeIndex(_ index: Z8016BitRegister, value: UInt16) async {
+    func writeIndex(_ index: Z8016BitRegister, value: UInt16) {
         switch index {
         case .PC:
             PC = value
         case .SP:
              SP = value
-            await controller.memoryMap?.recordStack(value)
+            controller.memoryMap?.recordStack(value)
         case .IX:
              IX = value
-            await controller.memoryMap?.recordIxy(value)
+            controller.memoryMap?.recordIxy(value)
         case .IY:
              IY = value
-            await controller.memoryMap?.recordIxy(value)
+            controller.memoryMap?.recordIxy(value)
         case .SPARE:
              SPARE16 = value
         }
      }
 
-    func swapAF() async {
+    func swapAF() {
         let temp = AF
         AF = AF2
         AF2 = temp
     }
 
-    func swapBC() async {
+    func swapBC() {
         let temp = BC
         BC = BC2
         BC2 = temp
     }
 
-    func swapDE() async {
+    func swapDE() {
         let temp = DE
         DE = DE2
         DE2 = temp
     }
 
-    func swapHL() async {
+    func swapHL() {
         let temp = HL
         HL = HL2
         HL2 = temp
     }
 
-    func getRegister(_ byte: UInt8) async -> UInt8 {
+    func getRegister(_ byte: UInt8) -> UInt8 {
         switch byte {
         case 0:
             return B
@@ -197,13 +197,13 @@ extension Z80 {
         case 5:
             return L
         case 6:
-            return await memory.read(from: HL)
+            return memory.read(from: HL)
         default:
             return A
         }
     }
 
-        func writeRegister(_ byte: UInt8, value: UInt8) async {
+        func writeRegister(_ byte: UInt8, value: UInt8) {
              switch byte {
              case 0:
                  B = value
@@ -218,7 +218,7 @@ extension Z80 {
              case 5:
                  L = value
              case 6:
-                 await memory.write(to: HL, value: value)
+                 memory.write(to: HL, value: value)
                  //break
              default:
                  A = value
@@ -252,15 +252,15 @@ extension Z80 {
                        pc: UInt16,
                        shouldReturn: Bool
     ) async {
-        AF = await wordFrom(high: a, low: f)
-        BC = await wordFrom(high: b, low: c)
-        DE = await wordFrom(high: d, low: e)
-        HL = await wordFrom(high: h, low: l)
+        AF = wordFrom(high: a, low: f)
+        BC = wordFrom(high: b, low: c)
+        DE = wordFrom(high: d, low: e)
+        HL = wordFrom(high: h, low: l)
         
-            AF2 = await wordFrom(high: a2, low: f2)
-            BC2 = await wordFrom(high: b2, low: c2)
-            DE2 = await wordFrom(high: d2, low: e2)
-            HL2 = await wordFrom(high: h2, low: l2)
+            AF2 = wordFrom(high: a2, low: f2)
+            BC2 = wordFrom(high: b2, low: c2)
+            DE2 = wordFrom(high: d2, low: e2)
+            HL2 = wordFrom(high: h2, low: l2)
         
         SP = sp
         I = i
@@ -271,18 +271,18 @@ extension Z80 {
         iff2 = ir2
         
         if (shouldReturn) {
-            await ret()
+            ret()
         } else {
             PC = pc
         }
         
-        await fetchRegisterData().forEach{ rg in
+        fetchRegisterData().forEach{ rg in
             loggingService.log("rg.key: \(rg.key) rg.value: \(rg.value)")
         }
         
     }
     
-    func fetchRegisterData() async -> Dictionary<String, String> {
+    func fetchRegisterData() -> Dictionary<String, String> {
         return ["A": A.hex(),
                 "B": B.hex(),
                 "C": C.hex(),

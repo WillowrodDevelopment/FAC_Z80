@@ -10,9 +10,9 @@ import Foundation
 extension Z80 {
     // PC and SP Specific
     
-    func next() async -> UInt8 {
+    func next() -> UInt8 {
         let oPC = PC
-        let opcode = await memory.read(from: PC)
+        let opcode = memory.read(from: PC)
 //        if stack.count >= 50 {
 //            stack.removeFirst()
 //        }
@@ -27,9 +27,9 @@ extension Z80 {
         return opcode
     }
     
-    func nextWord() async -> UInt16 {
-        let low = await next()
-        let high = await next()
+    func nextWord() -> UInt16 {
+        let low = next()
+        let high = next()
         return (UInt16(high) * 256) + UInt16(low)
     }
     
@@ -37,44 +37,44 @@ extension Z80 {
         PC -= value
     }
     
-    func relativeJump(twos: UInt8) async {
+    func relativeJump(twos: UInt8) {
         let oldPC = lastFetchPC
         let jump = PC &+ UInt16(twos & 0x7f) &- UInt16(twos & 0x80)
         PC = jump
         memptr = PC
-        await recordJumpBanked(jump, from: oldPC)
+        recordJumpBanked(jump, from: oldPC)
     }
     
-    func push(_ value: UInt16) async {
+    func push(_ value: UInt16) {
         SP = SP &- 2
-        await memory.writeWord(to: SP, value: value)
+        memory.writeWord(to: SP, value: value)
 //        stack.append(value)
 //        controlDelegate?.updateStack(stack)
     }
     
-    func pop() async -> UInt16 {
+    func pop() -> UInt16 {
 //        if stackSize == 0 {
 //            logDelegate?.logError("Stack overflow")
 //        } else {
 //            stack.removeLast()
 //            controlDelegate?.updateStack(stack)
 //        }
-        let rtn = await memory.readWord(from: SP)
+        let rtn = memory.readWord(from: SP)
         SP = SP &+ 2
         stackSize -= 1
         return rtn
     }
     
-    func ret() async {
-        PC = await pop()
+    func ret() {
+        PC = pop()
         memptr = PC
     }
     
-    func jump(_ target: UInt16) async {
+    func jump(_ target: UInt16) {
         let oldPC = lastFetchPC
         PC = target
         memptr = PC
-       await recordJumpBanked(target, from: oldPC)
+       recordJumpBanked(target, from: oldPC)
 //        if controller.recordingJumpMap && target > 0x4000 {
 //            if !controller.jumpMap.contains(target){
 //                loggingService.log("New target: \(target) - \(target.hex())")
@@ -114,15 +114,15 @@ extension Z80 {
         iff1 = 0x00
         iff2 = 0x00
 
-        await hardwarePorts.reset()
-        await updatePort(port: 0xfe, bit: 1, set: false)
-        await updatePort(port: 0xfd, bit: 1, set: false)
-        await updatePort(port: 0xfb, bit: 1, set: false)
-        await updatePort(port: 0xf7, bit: 1, set: false)
-        await updatePort(port: 0xef, bit: 1, set: false)
-        await updatePort(port: 0xdf, bit: 1, set: false)
-        await updatePort(port: 0xbf, bit: 1, set: false)
-        await updatePort(port: 0x7f, bit: 1, set: false)
+        hardwarePorts.reset()
+        updatePort(port: 0xfe, bit: 1, set: false)
+        updatePort(port: 0xfd, bit: 1, set: false)
+        updatePort(port: 0xfb, bit: 1, set: false)
+        updatePort(port: 0xf7, bit: 1, set: false)
+        updatePort(port: 0xef, bit: 1, set: false)
+        updatePort(port: 0xdf, bit: 1, set: false)
+        updatePort(port: 0xbf, bit: 1, set: false)
+        updatePort(port: 0x7f, bit: 1, set: false)
   
         
         await standard()

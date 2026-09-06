@@ -15,11 +15,11 @@ public actor Z80Log {
     }
     
     public func pollRegisters() async -> Dictionary<String, String> {
-        return await cpu.fetchRegisterData()
+        return cpu.fetchRegisterData()
     }
     
     public func pollMemory(from: Int, size: Int) async -> [UInt8] {
-        return await cpu.memory.fetchBatch(from: from, size: size)
+        return cpu.memory.fetchBatch(from: from, size: size)
     }
     
 }
