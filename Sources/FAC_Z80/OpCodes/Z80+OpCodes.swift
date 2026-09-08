@@ -18,6 +18,11 @@ extension Z80 {
     /// tests).
     public func fetchAndExecute() {
         if isInHaltState {
+            instructionBaseTStates = tStates
+            instructionDelay = 0
+            instructionLastOffset = 0
+            instructionAccessIndex = 0
+            currentInstructionPattern = nil
             accumulate(m: 1, t: 4)
             postInstruction(t: 4)
             return
@@ -29,10 +34,17 @@ extension Z80 {
             return
         }
 
+        instructionBaseTStates = tStates
+        instructionDelay = 0
+        instructionLastOffset = 0
+        instructionAccessIndex = 0
+        currentInstructionPattern = nil
         let opCode = next()
         let info = opcodeTables.main[Int(opCode)]
+        currentInstructionPattern = info.accessPattern
+        instructionAccessIndex = info.accessPattern.steps.isEmpty ? 0 : 1
         let (m, t) = info.execute(self)
-        accumulate(m: m, t: t)
+        accumulate(m: m, t: t - instructionLastOffset)
         postInstruction(t: t)
     }
 }

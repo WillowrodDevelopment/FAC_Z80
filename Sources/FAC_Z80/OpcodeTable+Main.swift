@@ -611,6 +611,11 @@ extension OpcodeTableSet {
         }
         set(0xFF, 11) { cpu in cpu.push(cpu.PC); cpu.jump(0x38) }
 
+        let patterns = buildMainPatterns()
+        for op in 0..<256 {
+            t[op].accessPattern = patterns[op]
+        }
+
         return t
     }
 }

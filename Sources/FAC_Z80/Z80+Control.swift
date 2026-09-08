@@ -117,6 +117,11 @@ extension Z80 {
         intServicedThisFrame = false
         nmiRequested = false
         lastScanline = 0
+        instructionBaseTStates = 0
+        instructionDelay = 0
+        instructionLastOffset = 0
+        instructionAccessIndex = 0
+        currentInstructionPattern = nil
 
         hardwarePorts.reset()
         updatePort(port: 0xfe, bit: 1, set: false)

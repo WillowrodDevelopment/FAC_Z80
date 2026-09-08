@@ -54,16 +54,43 @@ open class Z80 {
     /// into the CPU clock at each contended memory access.
     public weak var contention: BusContention?
 
-    /// Reports an access to the recorder (if any) at the current frame t-state,
-    /// and applies any bus-contention wait state by advancing the CPU clock.
+    // **** Per-M-cycle clock (M0) ****
+    var instructionBaseTStates = 0
+    var instructionDelay = 0
+    var instructionLastOffset = 0
+    var instructionAccessIndex = 0
+    var currentInstructionPattern: AccessPattern?
+
+    /// Reports an access to the recorder at its per-M-cycle frame position, and
+    /// applies any bus-contention wait state by advancing the CPU clock.
     func recordAccess(_ kind: MemAccessKind, address: UInt16) {
+        if let pattern = currentInstructionPattern,
+           instructionAccessIndex < pattern.steps.count {
+            let step = pattern.steps[instructionAccessIndex]
+            let target = instructionBaseTStates + step.tStateOffset + instructionDelay
+            if target > tStates {
+                tStates = target
+            }
+            instructionLastOffset = step.tStateOffset
+            instructionAccessIndex += 1
+        }
+        // The per-M-cycle clock can run past the frame boundary mid-instruction
+        // (accumulate wraps it at the end); the ULA model expects a frame-relative
+        // position, so wrap it here.
+        let frameT = currentFrameTState % frameTStates
         if let contention {
-            let delay = contention.delay(beginningAt: currentFrameTState, address: address)
+            let delay = contention.delay(beginningAt: frameT, address: address)
             if delay > 0 {
                 tStates += delay
+                instructionDelay += delay
             }
         }
-        accessRecorder?.record(RecordedMemoryAccess(kind: kind, address: address, tStateInFrame: currentFrameTState))
+        // Recompute after contention so the recorder sees the post-delay position.
+        accessRecorder?.record(RecordedMemoryAccess(
+            kind: kind,
+            address: address,
+            tStateInFrame: currentFrameTState % frameTStates
+        ))
     }
 
     /// The CPU's absolute position in the current frame, in t-states.

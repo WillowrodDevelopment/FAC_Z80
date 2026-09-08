@@ -57,7 +57,7 @@ public struct OpcodeInfo {
     /// CALL/RET/JR, block-repeat ops — exactly as the switch does today.
     public let execute: (Z80) -> (m: Int, t: Int)
     /// The ordered memory-access pattern of this instruction.
-    public let accessPattern: AccessPattern
+    public var accessPattern: AccessPattern
 
     public init(execute: @escaping (Z80) -> (m: Int, t: Int), accessPattern: AccessPattern = .fetchOnly) {
         self.execute = execute
