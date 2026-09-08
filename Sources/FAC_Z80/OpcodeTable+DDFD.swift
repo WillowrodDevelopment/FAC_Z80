@@ -546,6 +546,9 @@ extension OpcodeTableSet {
         }
         set(0xFF, 15) { cpu in cpu.push(cpu.PC); cpu.jump(0x38) }
 
+        let patterns = buildDDFDPatterns()
+        for op in 0..<256 { t[op].accessPattern = patterns[op] }
+
         return t
     }
 }

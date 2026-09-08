@@ -109,6 +109,9 @@ extension OpcodeTableSet {
             }
         }
 
+        let patterns = buildCBPatterns()
+        for op in 0..<256 { table[op].accessPattern = patterns[op] }
+
         return table
     }
 }

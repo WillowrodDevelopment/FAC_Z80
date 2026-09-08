@@ -108,6 +108,9 @@ extension OpcodeTableSet {
             }
         }
 
+        let patterns = buildDDFDCBPatterns()
+        for op in 0..<256 { t[op].accessPattern = patterns[op] }
+
         return t
     }
 }

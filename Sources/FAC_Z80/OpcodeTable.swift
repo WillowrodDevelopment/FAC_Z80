@@ -70,9 +70,11 @@ public struct OpcodeInfo {
 /// in the byte stream, so it cannot be re-read inside the handler).
 public struct DDFDCBOpcodeInfo {
     public let execute: (Z80, UInt16) -> (m: Int, t: Int)
+    public var accessPattern: AccessPattern
 
-    public init(execute: @escaping (Z80, UInt16) -> (m: Int, t: Int)) {
+    public init(execute: @escaping (Z80, UInt16) -> (m: Int, t: Int), accessPattern: AccessPattern = .fetchOnly) {
         self.execute = execute
+        self.accessPattern = accessPattern
     }
 }
 

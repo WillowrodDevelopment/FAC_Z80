@@ -381,6 +381,9 @@ extension OpcodeTableSet {
         t[0x77] = OpcodeInfo { _ in (2, 8) }
         t[0x7F] = OpcodeInfo { _ in (2, 8) }
 
+        let patterns = buildEDPatterns()
+        for op in 0..<256 { t[op].accessPattern = patterns[op] }
+
         return t
     }
 }
