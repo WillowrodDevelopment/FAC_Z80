@@ -22,7 +22,7 @@ extension Z80 {
             } else {
                 await preProcess()
                 fetchAndExecute()
-                checkNMI()
+                serviceInterrupts()
                 if frameBoundaryHit {
                     frameBoundaryHit = false
                     await fps()
@@ -60,32 +60,18 @@ extension Z80 {
         } else {
             await display()
         }
-        handleInterupt()
+        // Fallback: guarantee the maskable INT fires once per frame even if no
+        // instruction boundary landed inside the INT window. The primary path
+        // is per-instruction in serviceInterrupts().
+        if !intServicedThisFrame && iff1 == 1 && controller.processorSpeed != .paused {
+            intServicedThisFrame = true
+            serviceMaskableInterrupt()
+        }
 //        if loggingService.isLoggingProcessor {
 //                   loggingService.logProcessor(message: lastPCValues.map{"\($0)"}.joined(separator: "-"))
 //                   lastPCValues.removeAll()
 //        }
    
-    }
-    
-    private func handleInterupt() {
-        if controller.processorSpeed != .paused {
-            if iff2 == 1 { // If IFF2 is enabled, run the selected interupt mode
-                isInHaltState = false
-                push(PC)
-                switch interuptMode {
-                case 0:
-                    PC = 0x0066 // Unused on the ZX Spectrum
-                case 1:
-                    PC = 0x0038
-                default:
-                    let oldPC = PC
-                    let intAddress = (UInt16(I) * 256) + 0xff // Assume the databus will send 0xFF as no external hardware available
-                    PC = memory.readWord(from: intAddress)
-                    recordJumpBanked(PC, type: .IM2, from: oldPC)
-                }
-            }
-        }
     }
     
 
@@ -114,7 +100,7 @@ extension Z80 {
         guard !controller.isStepping else { return }
         controller.isStepping = true
         fetchAndExecute()
-        checkNMI()
+        serviceInterrupts()
         if frameBoundaryHit {
             frameBoundaryHit = false
             await fps()

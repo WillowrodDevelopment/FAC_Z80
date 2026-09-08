@@ -113,6 +113,8 @@ extension Z80 {
         interuptMode = 1
         iff1 = 0x00
         iff2 = 0x00
+        eiDeferred = false
+        intServicedThisFrame = false
         nmiRequested = false
         lastScanline = 0
 

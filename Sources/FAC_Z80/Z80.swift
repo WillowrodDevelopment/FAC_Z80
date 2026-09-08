@@ -164,6 +164,62 @@ open class Z80 {
         push(PC)
         PC = 0x0066
     }
+
+    // **** M0: maskable-INT timing (per-instruction, once per frame) ****
+    /// EI defers interrupt acceptance by one instruction: EI sets IFF1/IFF2 but
+    /// the instruction *following* EI always completes before an INT is taken.
+    public var eiDeferred = false
+    /// True once a maskable INT has been serviced this frame (reset at the
+    /// frame boundary) so the interrupt fires at most once per frame.
+    var intServicedThisFrame = false
+    /// First frame t-state at which the maskable INT line is asserted
+    /// (machine-configurable; default: 48K's pulse at frame start).
+    open var interruptStartTState: Int { 0 }
+    /// Frame t-state just past the end of the maskable INT pulse (default 32).
+    open var interruptEndTState: Int { 32 }
+    /// Whether the maskable INT line is asserted at the current frame position.
+    public var intAsserted: Bool {
+        tStates >= interruptStartTState && tStates < interruptEndTState
+    }
+
+    /// Services a pending NMI, then the maskable INT. Called after every
+    /// instruction. The maskable INT is serviced at most once per frame: it is
+    /// taken only inside the assert window when IFF1 is set and not in the EI
+    /// deferral; accepting it clears IFF1/IFF2 (real-Z80 behaviour), so it can
+    /// never re-fire until the program re-enables interrupts.
+    func serviceInterrupts() {
+        checkNMI()
+        if controller.processorSpeed == .paused { return }
+        guard !intServicedThisFrame else { return }
+        if eiDeferred {
+            // The instruction after EI completes without interruption.
+            eiDeferred = false
+            return
+        }
+        if intAsserted && iff1 == 1 {
+            intServicedThisFrame = true
+            serviceMaskableInterrupt()
+        }
+    }
+
+    func serviceMaskableInterrupt() {
+        isInHaltState = false
+        push(PC)
+        switch interuptMode {
+        case 0:
+            PC = 0x0066 // Unused on the ZX Spectrum
+        case 1:
+            PC = 0x0038
+        default:
+            let oldPC = PC
+            let intAddress = (UInt16(I) * 256) + 0xff // Assume the databus will send 0xFF as no external hardware available
+            PC = memory.readWord(from: intAddress)
+            recordJumpBanked(PC, type: .IM2, from: oldPC)
+        }
+        // Real Z80: accepting a maskable interrupt clears IFF1 and IFF2.
+        iff1 = 0
+        iff2 = 0
+    }
     var pagingByte: UInt8 = 0
 
     public var shouldProcess = false
@@ -304,6 +360,7 @@ open class Z80 {
         }
         if tStates >= frameTStates {
             tStates = 0
+            intServicedThisFrame = false
             lastScanline = 0
             frameBoundaryHit = true
         }

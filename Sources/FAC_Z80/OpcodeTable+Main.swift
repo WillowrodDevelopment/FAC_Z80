@@ -566,7 +566,7 @@ extension OpcodeTableSet {
             let target = cpu.nextWord()
             if (cpu.F & cpu.sign) == 0 { cpu.jump(target) } else { cpu.memptr = target }
         }
-        set(0xF3, 4) { cpu in cpu.iff1 = 0; cpu.iff2 = 0 }
+        set(0xF3, 4) { cpu in cpu.iff1 = 0; cpu.iff2 = 0; cpu.eiDeferred = false }
         // 0xF4 CALL P
         t[0xF4] = OpcodeInfo { cpu in
             let target = cpu.nextWord()
@@ -591,7 +591,7 @@ extension OpcodeTableSet {
             let target = cpu.nextWord()
             if (cpu.F & cpu.sign) != 0 { cpu.jump(target) } else { cpu.memptr = target }
         }
-        set(0xFB, 4) { cpu in cpu.iff1 = 1; cpu.iff2 = 1 }
+        set(0xFB, 4) { cpu in cpu.iff1 = 1; cpu.iff2 = 1; cpu.eiDeferred = true }
         // 0xFC CALL M
         t[0xFC] = OpcodeInfo { cpu in
             let target = cpu.nextWord()
