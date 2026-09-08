@@ -20,6 +20,18 @@ public protocol MemoryAccessRecorder: AnyObject {
     func record(_ access: RecordedMemoryAccess)
 }
 
+/// Supplies ULA bus-contention wait states for a machine.
+///
+/// FAC_Z80 deliberately does NOT depend on FAC_ULA (the ULA is Spectrum-only),
+/// so the contention model is injected through this protocol. A machine (e.g.
+/// the app's ZXSpectrum) supplies a conformer backed by FAC_ULA's
+/// `MemoryContentionModel`.
+public protocol BusContention: AnyObject {
+    /// Wait states the ULA inserts for a memory access to `address` whose
+    /// memory cycle begins at absolute frame t-state `tStateInFrame`.
+    func delay(beginningAt tStateInFrame: Int, address: UInt16) -> Int
+}
+
 /// A single recorded access.
 public struct RecordedMemoryAccess: Sendable {
     public let kind: MemAccessKind

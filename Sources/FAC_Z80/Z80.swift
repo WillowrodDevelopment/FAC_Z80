@@ -50,8 +50,19 @@ open class Z80 {
     /// this recorder when one is attached.
     public weak var accessRecorder: MemoryAccessRecorder?
 
-    /// Reports an access to the recorder (if any) at the current frame t-state.
+    /// Optional bus-contention model (ULA). When set, wait states are inserted
+    /// into the CPU clock at each contended memory access.
+    public weak var contention: BusContention?
+
+    /// Reports an access to the recorder (if any) at the current frame t-state,
+    /// and applies any bus-contention wait state by advancing the CPU clock.
     func recordAccess(_ kind: MemAccessKind, address: UInt16) {
+        if let contention {
+            let delay = contention.delay(beginningAt: currentFrameTState, address: address)
+            if delay > 0 {
+                tStates += delay
+            }
+        }
         accessRecorder?.record(RecordedMemoryAccess(kind: kind, address: address, tStateInFrame: currentFrameTState))
     }
 
