@@ -44,6 +44,24 @@ open class Z80 {
     
     let memory: MemoryDelegate
     
+    /// Optional recorder that observes every memory/I/O access with its frame
+    /// t-state. Set by a machine to feed ULA contention. `memory` is always a
+    /// recording wrapper that forwards to the real delegate and reports to
+    /// this recorder when one is attached.
+    public weak var accessRecorder: MemoryAccessRecorder?
+
+    /// Reports an access to the recorder (if any) at the current frame t-state.
+    func recordAccess(_ kind: MemAccessKind, address: UInt16) {
+        accessRecorder?.record(RecordedMemoryAccess(kind: kind, address: address, tStateInFrame: currentFrameTState))
+    }
+
+    /// The CPU's absolute position in the current frame, in t-states.
+    private var currentFrameTState: Int {
+        frameBaseTState + tStates
+    }
+
+    var frameBaseTState = 0
+    
     var stack: [UInt16] = []
     
     // **** Registers ****
@@ -151,12 +169,20 @@ open class Z80 {
     let loggingService = LoggingService.shared
     
     public init(memory: MemoryDelegate) {
-        self.memory = memory
+        let wrapper = RecordingMemoryDelegate(wrapping: memory)
+        self.memory = wrapper
         calculateTables()
         controller.cpuLog = Z80Log(cpu: self)
+        wrapper.attach(cpu: self)
     }
      
     public let controller = Z80Controller.shared
+
+    /// The opcode dispatch tables for this CPU. Defaults to the reference
+    /// (switch-equivalent) tables; used by the table-driven execution path
+    /// during the switch→table refactor and, once migrated, as the primary
+    /// dispatcher.
+    public var opcodeTables: OpcodeTableSet = OpcodeTableSet.defaultTables()
     
     // Overrideable functions
     
@@ -259,11 +285,13 @@ open class Z80 {
     // Port I/O hooks - overridable so specific computers (e.g. the ZX
     // Spectrum 128k) can intercept memory paging and sound chip ports.
     open func writePort(lower: UInt8, upper: UInt8?, value: UInt8) {
+        recordAccess(.io, address: UInt16(lower))
         hardwarePorts.performOut(lower: lower, upper: upper, value: value)
     }
     
     open func readPort(lower: UInt8, upper: UInt8) -> UInt8 {
-        hardwarePorts.performIn(lower: lower, upper: upper)
+        recordAccess(.io, address: UInt16(lower))
+        return hardwarePorts.performIn(lower: lower, upper: upper)
     }
     
 //    open func memory.write(to: UInt16, value: UInt8) async {
