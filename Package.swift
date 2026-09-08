@@ -31,6 +31,7 @@ let package = Package(
             ]),
         .testTarget(
             name: "FAC_Z80Tests",
-            dependencies: ["FAC_Z80"]),
+            dependencies: ["FAC_Z80"],
+            path: "Tests/FAC_Z80Tests"),
     ]
 )

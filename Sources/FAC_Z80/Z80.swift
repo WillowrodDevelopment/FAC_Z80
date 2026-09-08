@@ -202,6 +202,13 @@ open class Z80 {
         iff2 = iff2Temp
     }
     
+    /// Total t-states per rendered frame, gated per machine. Defaults to the
+    /// classic 48K figure (69,888). A subclass overrides this for machines with
+    /// a different frame budget — e.g. the 128K/+2 and +2A/+3 run 70,908
+    /// (228 t-states × 311 lines). FAC_ULA's ULATimingProfile is the source of
+    /// truth for these numbers when a machine adopts it.
+    open var frameTStates: Int { tStatesPerFrame }
+
     /// Synchronously accumulates cycle counts and R refresh for an instruction.
     /// Sets `frameBoundaryHit` when a frame's t-state budget is consumed so the
     /// async renderer can be invoked once per frame by the process loop.
@@ -209,7 +216,7 @@ open class Z80 {
         tStates += t
         let bit7 = R & 0x80
         R = ((R &+ UInt8(m)) & 0x7F) | bit7
-        if tStates >= tStatesPerFrame {
+        if tStates >= frameTStates {
             tStates = 0
             frameBoundaryHit = true
         }
