@@ -22,6 +22,7 @@ extension Z80 {
             } else {
                 await preProcess()
                 fetchAndExecute()
+                checkNMI()
                 if frameBoundaryHit {
                     frameBoundaryHit = false
                     await fps()
@@ -113,6 +114,7 @@ extension Z80 {
         guard !controller.isStepping else { return }
         controller.isStepping = true
         fetchAndExecute()
+        checkNMI()
         if frameBoundaryHit {
             frameBoundaryHit = false
             await fps()

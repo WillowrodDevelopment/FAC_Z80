@@ -113,6 +113,8 @@ extension Z80 {
         interuptMode = 1
         iff1 = 0x00
         iff2 = 0x00
+        nmiRequested = false
+        lastScanline = 0
 
         hardwarePorts.reset()
         updatePort(port: 0xfe, bit: 1, set: false)

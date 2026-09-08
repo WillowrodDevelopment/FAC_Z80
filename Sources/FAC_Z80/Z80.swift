@@ -126,6 +126,44 @@ open class Z80 {
     public var iff2: UInt8 = 0x00
     public var interuptsEnabled: Bool = false
     var runInterup: Bool = false
+
+    // **** M0: scanline tracking (additive, no game-timing impact) ****
+    /// T-states per scanline (default: 48K's 224). Machines with a different
+    /// line length override this.
+    open var tStatesPerScanline: Int { 224 }
+    /// Scanlines per rendered frame, derived from the frame budget.
+    public var scanlinesPerFrame: Int { frameTStates / tStatesPerScanline }
+    /// Current scanline within the frame (0…scanlinesPerFrame-1).
+    public var currentScanline: Int {
+        min(tStates / tStatesPerScanline, max(scanlinesPerFrame - 1, 0))
+    }
+    /// Hook fired for each scanline boundary crossed by an instruction. Machines
+    /// override this for per-line behaviour (ULA fetch, border, Copper).
+    open func scanlineCrossed(line: Int) {
+    }
+    var lastScanline = 0
+
+    // **** M0: NMI (additive, unused by Spectrum software) ****
+    /// Set by `requestNMI()`; serviced at the next instruction boundary by
+    /// `checkNMI()`, independent of the maskable-INT path.
+    public var nmiRequested = false
+    /// Requests a non-maskable interrupt. On service: IFF1 is saved to IFF2,
+    /// IFF1 is cleared, and the CPU vectors to 0x0066 (RETN restores IFF1).
+    public func requestNMI() {
+        nmiRequested = true
+    }
+
+    /// Services a pending NMI (called after each instruction). Leaves the
+    /// maskable-INT path untouched so frame-interrupt-driven games are unaffected.
+    func checkNMI() {
+        guard nmiRequested else { return }
+        nmiRequested = false
+        iff2 = iff1          // save IFF1 for RETN
+        iff1 = 0             // disable maskable interrupts during NMI handler
+        isInHaltState = false
+        push(PC)
+        PC = 0x0066
+    }
     var pagingByte: UInt8 = 0
 
     public var shouldProcess = false
@@ -250,11 +288,23 @@ open class Z80 {
     /// Sets `frameBoundaryHit` when a frame's t-state budget is consumed so the
     /// async renderer can be invoked once per frame by the process loop.
     func accumulate(m: Int, t: Int) {
+        let oldT = tStates
         tStates += t
         let bit7 = R & 0x80
         R = ((R &+ UInt8(m)) & 0x7F) | bit7
+        let newLine = min(tStates / tStatesPerScanline, max(scanlinesPerFrame - 1, 0))
+        let oldLine = oldT / tStatesPerScanline
+        // Forward crossings only: a frame wrap (newLine < oldLine) resets the
+        // scanline counter below rather than reporting phantom lines.
+        if newLine > oldLine {
+            for line in (oldLine + 1)...newLine {
+                scanlineCrossed(line: line)
+            }
+            lastScanline = newLine
+        }
         if tStates >= frameTStates {
             tStates = 0
+            lastScanline = 0
             frameBoundaryHit = true
         }
         if controller.memoryMap != nil {
