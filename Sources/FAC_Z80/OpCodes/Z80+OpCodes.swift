@@ -44,7 +44,12 @@ extension Z80 {
         currentInstructionPattern = info.accessPattern
         instructionAccessIndex = info.accessPattern.steps.isEmpty ? 0 : 1
         let (m, t) = info.execute(self)
-        accumulate(m: m, t: t - instructionLastOffset)
+        if m != 0 || t != 0 {
+            accumulate(m: m, t: t - instructionLastOffset)
+        } else {
+            // Prefix (CB/ED/DD/FD) already self-accumulated via per-M-cycle dispatch
+            // Do not double-count; outer's lastOffset is from inner's pattern
+        }
         postInstruction(t: t)
     }
 }

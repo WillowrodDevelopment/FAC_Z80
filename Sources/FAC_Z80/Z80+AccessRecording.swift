@@ -86,4 +86,8 @@ final class RecordingMemoryDelegate: MemoryDelegate {
     func fetchBatch(from address: Int, size: Int) -> [UInt8] {
         wrapped.fetchBatch(from: address, size: size)
     }
+
+    func peek(from address: UInt16) -> UInt8 {
+        wrapped.peek(from: address)
+    }
 }

@@ -13,4 +13,10 @@ public protocol MemoryDelegate {
     func writeWord(to: UInt16, value: UInt16)
     func readWord(from: UInt16) -> UInt16
     func fetchBatch(from: Int, size: Int) -> [UInt8]
+    /// Peek without side effects: does not trigger access recording or logging. Default is `read`.
+    func peek(from: UInt16) -> UInt8
+}
+
+public extension MemoryDelegate {
+    func peek(from address: UInt16) -> UInt8 { read(from: address) }
 }

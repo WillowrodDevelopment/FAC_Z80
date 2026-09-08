@@ -53,6 +53,10 @@ final class LoggingMemory: MemoryDelegate {
         ram[Int(address)]
     }
 
+    func peek(from address: UInt16) -> UInt8 {
+        ram[Int(address)]
+    }
+
     func resetLog() {
         accessLog.removeAll()
     }

@@ -13,6 +13,65 @@ import Foundation
 
 extension Z80 {
 
+    // MARK: - Per-M-cycle prefix dispatch (M1)
+
+    func opCodeCBWithPattern() {
+        let opPeek = memory.peek(from: PC)
+        let info = opcodeTables.cb[Int(opPeek)]
+        currentInstructionPattern = info.accessPattern
+        instructionAccessIndex = 1
+        let (m, t) = info.execute(self)
+        accumulate(m: m, t: t - instructionLastOffset)
+    }
+
+    func opCodeEDWithPattern() {
+        let opPeek = memory.peek(from: PC)
+        let info = opcodeTables.ed[Int(opPeek)]
+        currentInstructionPattern = info.accessPattern
+        instructionAccessIndex = 1
+        let (m, t) = info.execute(self)
+        accumulate(m: m, t: t - instructionLastOffset)
+    }
+
+    func opCodeDDFDWithPattern(index: Z8016BitRegister) {
+        let opPeek = memory.peek(from: PC)
+        if opPeek == 0xCB {
+            // DDFDCB 4-byte: DD CB d op — PC at CB
+            let ddfOpPeek = memory.peek(from: PC &+ 2)
+            let ddfInfo = opcodeTables.ddfdcb[Int(ddfOpPeek)]
+            currentInstructionPattern = ddfInfo.accessPattern
+            instructionAccessIndex = 1 // next is CB at 4
+            let _ = next() // CB
+            let d = next() // d at 7
+            let opCode = next() // op at 10
+            let disIndex = displacedIndex(index, displacement: d)
+            let info = opcodeTables.ddfdcb[Int(opCode)]
+            let (m, t) = info.execute(self, disIndex)
+            accumulate(m: m, t: t - instructionLastOffset)
+            return
+        }
+        let table = index == .IX ? opcodeTables.dd : opcodeTables.fd
+        let info = table[Int(opPeek)]
+        currentInstructionPattern = info.accessPattern
+        instructionAccessIndex = 1
+        let (m, t) = info.execute(self)
+        accumulate(m: m, t: t - instructionLastOffset)
+    }
+
+    func opCodeDDFDCBWithPattern(index: Z8016BitRegister) {
+        // Called from DDFD table's CB entry — PC at d (CB already consumed as DD operand)
+        let opPeek = memory.peek(from: PC &+ 1)
+        let info = opcodeTables.ddfdcb[Int(opPeek)]
+        currentInstructionPattern = info.accessPattern
+        instructionAccessIndex = 2 // DD at 0 and CB at 4 already consumed, next is d at 7
+        let d = next()
+        let opCode = next()
+        let disIndex = displacedIndex(index, displacement: d)
+        let ddfInfo = opcodeTables.ddfdcb[Int(opCode)]
+        let (m, t) = ddfInfo.execute(self, disIndex)
+        accumulate(m: m, t: t - instructionLastOffset)
+    }
+
     /// Table-driven equivalent of `opCodeED()`: reads the ED operand, executes
     /// the migrated ED table handler, then accumulates. Used for validation and
     /// as the eventual production path.
