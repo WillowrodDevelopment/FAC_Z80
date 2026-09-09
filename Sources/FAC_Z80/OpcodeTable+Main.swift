@@ -398,9 +398,9 @@ extension OpcodeTableSet {
             let target = cpu.nextWord()
             if (cpu.F & cpu.zero) != 0 { cpu.jump(target) } else { cpu.memptr = target }
         }
-        // 0xCB → CB sub-decoder (self-accumulates) → (0,0) — fallback until CB timing verified
+        // 0xCB → CB sub-decoder (per-M-cycle, self-accumulates) → (0,0) — isolated bring-up
         t[0xCB] = OpcodeInfo { cpu in
-            cpu.opCodeCB()
+            cpu.opCodeCBWithPattern()
             return (0, 0)
         }
         // 0xCC CALL Z
