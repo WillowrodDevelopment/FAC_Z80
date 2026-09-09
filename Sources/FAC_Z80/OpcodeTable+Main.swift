@@ -543,9 +543,9 @@ extension OpcodeTableSet {
             cpu.memptr = target
             return (1, 10)
         }
-        // 0xED → ED sub-decoder (per-M-cycle, self-accumulates) → (0,0)
+        // 0xED → ED sub-decoder (migrated table), self-accumulates → (0,0) — keep fallback for boot until ED block timing verified
         t[0xED] = OpcodeInfo { cpu in
-            cpu.opCodeEDWithPattern()
+            cpu.opCodeEDViaTable()
             return (0, 0)
         }
         set(0xEE, 7) { cpu in
