@@ -82,8 +82,8 @@ extension OpcodeTableSet {
 
         p[0xE3] = AccessPattern(steps: [.init(.fetch, 0), .init(.read, 4), .init(.read, 7), .init(.write, 11), .init(.write, 15)]) // EX (SP),HL 19T
 
-        p[0xD3] = AccessPattern(steps: [.init(.fetch, 0), .init(.read, 4), .init(.io, 7)])   // OUT (n),A 11T
-        p[0xDB] = AccessPattern(steps: [.init(.fetch, 0), .init(.read, 4), .init(.io, 7)])   // IN A,(n) 11T
+        p[0xD3] = AccessPattern(steps: [.init(.fetch, 0), .init(.read, 4), .init(.io, 8)])   // OUT (n),A 11T - tuned for ULA border
+        p[0xDB] = AccessPattern(steps: [.init(.fetch, 0), .init(.read, 4), .init(.io, 8)])   // IN A,(n) 11T
 
         return p
     }
@@ -141,35 +141,33 @@ extension OpcodeTableSet {
         for op in [0x44, 0x4C, 0x54, 0x5C, 0x64, 0x6C, 0x74, 0x7C, 0x45, 0x4D, 0x55, 0x5D, 0x65, 0x6D, 0x75, 0x7D, 0x46, 0x4E, 0x66, 0x6E, 0x56, 0x76, 0x5E, 0x7E, 0x47, 0x4F, 0x57, 0x5F, 0x77, 0x7F] {
             p[op] = AccessPattern(steps: [.init(.fetch, 0), .init(.read, 4)])
         }
-        // RRD/RLD 18T: fetch ED, operand, read (HL), write (HL)
+        // RRD/RLD 18T: fetch ED, operand, read (HL), write (HL) — tuned to 8/12 for ULA
         for op in [0x67, 0x6F] {
-            p[op] = AccessPattern(steps: [.init(.fetch, 0), .init(.read, 4), .init(.read, 7), .init(.write, 11)])
+            p[op] = AccessPattern(steps: [.init(.fetch, 0), .init(.read, 4), .init(.read, 8), .init(.write, 12)])
         }
-        // LDI/LDD/CPI/CPD etc 16T: fetch ED, operand, read (HL), write (DE) or just read
+        // LDI/LDD/CPI/CPD etc 16T: fetch ED, operand, read (HL), write (DE) or just read — tuned 8/12
         for op in [0xA0, 0xA8, 0xA1, 0xA9, 0xA2, 0xAA, 0xA3, 0xAB] {
             if op == 0xA0 || op == 0xA8 {
-                p[op] = AccessPattern(steps: [.init(.fetch, 0), .init(.read, 4), .init(.read, 7), .init(.write, 11)])
+                p[op] = AccessPattern(steps: [.init(.fetch, 0), .init(.read, 4), .init(.read, 8), .init(.write, 12)])
             } else if op == 0xA2 || op == 0xAA {
-                p[op] = AccessPattern(steps: [.init(.fetch, 0), .init(.read, 4), .init(.write, 7), .init(.io, 11)])
+                p[op] = AccessPattern(steps: [.init(.fetch, 0), .init(.read, 4), .init(.write, 8), .init(.io, 12)])
             } else if op == 0xA3 || op == 0xAB {
-                p[op] = AccessPattern(steps: [.init(.fetch, 0), .init(.read, 4), .init(.read, 7), .init(.io, 11)])
+                p[op] = AccessPattern(steps: [.init(.fetch, 0), .init(.read, 4), .init(.read, 8), .init(.io, 12)])
             } else {
-                p[op] = AccessPattern(steps: [.init(.fetch, 0), .init(.read, 4), .init(.read, 7)])
+                p[op] = AccessPattern(steps: [.init(.fetch, 0), .init(.read, 4), .init(.read, 8)])
             }
         }
-        // Block repeats 21T/16T: same as non-repeat plus loop, modelled as non-repeat length
+        // Block repeats 21T/16T: same as non-repeat plus loop, modelled as non-repeat length — tuned 8/12
         for op in [0xB0, 0xB8, 0xB1, 0xB9, 0xB2, 0xBA, 0xB3, 0xBB] {
-            // Map to non-repeat counterpart for pattern
-            let base = op & 0x07 // B0->A0 etc
-            // reuse same pattern as 0xA0 etc (approx)
+            let base = op & 0x07
             if base == 0 {
-                p[op] = AccessPattern(steps: [.init(.fetch, 0), .init(.read, 4), .init(.read, 7), .init(.write, 11)])
+                p[op] = AccessPattern(steps: [.init(.fetch, 0), .init(.read, 4), .init(.read, 8), .init(.write, 12)])
             } else if base == 1 {
-                p[op] = AccessPattern(steps: [.init(.fetch, 0), .init(.read, 4), .init(.read, 7)])
+                p[op] = AccessPattern(steps: [.init(.fetch, 0), .init(.read, 4), .init(.read, 8)])
             } else if base == 2 {
-                p[op] = AccessPattern(steps: [.init(.fetch, 0), .init(.read, 4), .init(.write, 7), .init(.io, 11)])
+                p[op] = AccessPattern(steps: [.init(.fetch, 0), .init(.read, 4), .init(.write, 8), .init(.io, 12)])
             } else {
-                p[op] = AccessPattern(steps: [.init(.fetch, 0), .init(.read, 4), .init(.read, 7), .init(.io, 11)])
+                p[op] = AccessPattern(steps: [.init(.fetch, 0), .init(.read, 4), .init(.read, 8), .init(.io, 12)])
             }
         }
         return p
