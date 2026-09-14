@@ -33,6 +33,13 @@ extension Z80 {
             controller.processorSpeed = .paused
             return
         }
+        // M1 pre-fetch hook: lets a machine observe/react to opcode fetches
+        // before the byte is read (divMMC auto-paging, esxDOS RST 8 trap).
+        // Returning true means the hook handled the fetch (it must have set
+        // PC/state itself) and no instruction is executed.
+        if preFetch(pc: PC) {
+            return
+        }
 
         instructionBaseTStates = tStates
         instructionDelay = 0
@@ -40,6 +47,10 @@ extension Z80 {
         instructionAccessIndex = 0
         currentInstructionPattern = nil
         let opCode = next()
+        // Post-fetch hook: fires after the opcode byte was read (the M1
+        // cycle), before the instruction executes — used e.g. by the divMMC
+        // pager's delayed page-out at the $1FF8-$1FFF off-area.
+        postFetch(pc: lastFetchPC)
         let info = opcodeTables.main[Int(opCode)]
         currentInstructionPattern = info.accessPattern
         instructionAccessIndex = info.accessPattern.steps.isEmpty ? 0 : 1

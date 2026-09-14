@@ -449,6 +449,22 @@ open class Z80 {
     /// override it.
     open func nextRegWrite(_ reg: UInt8, value: UInt8) {
     }
+
+    /// Called before each M1 opcode fetch (in `fetchAndExecute`). A machine
+    /// overrides this to observe or trap opcode fetches — e.g. the divMMC
+    /// auto-pager and the esxDOS RST 8 dispatcher. Return `true` when the
+    /// hook has handled the fetch (it must have set PC/state itself), in
+    /// which case no instruction is executed this cycle.
+    open func preFetch(pc: UInt16) -> Bool {
+        false
+    }
+
+    /// Called immediately after each M1 opcode fetch (the opcode byte has
+    /// been read at `pc`), before the instruction executes. A machine
+    /// overrides this for post-fetch state changes — e.g. the divMMC
+    /// auto-pager's delayed page-out at the $1FF8-$1FFF off-area.
+    open func postFetch(pc: UInt16) {
+    }
     
 //    open func memory.write(to: UInt16, value: UInt8) async {
 //        //internalmemory.write(to: to, value: value)
