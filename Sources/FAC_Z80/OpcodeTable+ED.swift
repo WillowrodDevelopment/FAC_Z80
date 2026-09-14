@@ -437,6 +437,12 @@ extension OpcodeTableSet {
             return (2, 17)
         }
 
+        // Pixel helpers + JP (C) (8T / 13T)
+        t[0x93] = OpcodeInfo { cpu in guard cpu.z80nEnabled else { return (2, 12) }; cpu.z80nPixelDN(); return (2, 8) }
+        t[0x94] = OpcodeInfo { cpu in guard cpu.z80nEnabled else { return (2, 12) }; cpu.z80nPixelAD(); return (2, 8) }
+        t[0x95] = OpcodeInfo { cpu in guard cpu.z80nEnabled else { return (2, 12) }; cpu.z80nSetAE(); return (2, 8) }
+        t[0x98] = OpcodeInfo { cpu in guard cpu.z80nEnabled else { return (2, 12) }; cpu.z80nJPC(); return (2, 13) }
+
         // Block ops: LDIX, LDWS, LDDX (16T/14T), repeats LDIRX/LDDRX/LDPIRX (21T/16T)
         t[0xA4] = OpcodeInfo { cpu in
             guard cpu.z80nEnabled else { return (2, 12) }

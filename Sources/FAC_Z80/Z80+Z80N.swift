@@ -30,6 +30,40 @@ extension Z80 {
         A = a
     }
 
+    /// PIXELDN: advance HL one pixel row in the ZX screen-address layout.
+    /// The FPGA extracts Y = H[4:3] ++ L[7:5] ++ H[2:0], increments it, and
+    /// redistributes, preserving H[7:5] and L[4:0].
+    func z80nPixelDN() {
+        let h = H, l = L
+        var y = (UInt16(h & 0x18) << 3) | (UInt16(l & 0xE0) >> 2) | UInt16(h & 0x07)
+        y = (y + 1) & 0xFF
+        H = (h & 0xE0) | UInt8((y & 0xC0) >> 3) | UInt8(y & 0x07)
+        L = UInt8((y & 0x38) << 2) | (l & 0x1F)
+    }
+
+    /// PIXELAD: HL = screen address of the pixel (D = Y, E = X).
+    func z80nPixelAD() {
+        let y = D, x = E
+        var addr: UInt16 = 0x4000
+        addr |= (UInt16(y) & 0xC0) << 5 // Y bits 7-6 -> A12-A11
+        addr |= (UInt16(y) & 0x07) << 8 // Y bits 2-0 -> A10-A8
+        addr |= (UInt16(y) & 0x38) << 2 // Y bits 5-3 -> A7-A5
+        addr |= UInt16(x) >> 3          // X bits 7-3 -> A4-A0
+        HL = addr
+    }
+
+    /// SETAE: A = $80 >> (E & 7) — per-pixel mask (leftmost pixel E&7==0 -> bit 7).
+    func z80nSetAE() {
+        A = 0x80 >> (E & 7)
+    }
+
+    /// JP (C): PC = (PC & 0xC000) | (IN(C) << 6). The jump target comes from
+    /// the byte read from the port (BC), landing on one of 256 64-byte slots.
+    func z80nJPC() {
+        let portValue = performIn(port: C, map: B)
+        PC = (PC & 0xC000) | (UInt16(portValue) << 6)
+    }
+
     /// TEST n: A & n -> flags only (S, Z, P/V parity, H set); A preserved.
     func z80nTest(_ n: UInt8) {
         F = halfCarry | sz53pv(A & n)

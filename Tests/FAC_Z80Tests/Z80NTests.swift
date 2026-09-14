@@ -204,6 +204,47 @@ final class Z80NTests: XCTestCase {
         XCTAssertEqual(cpu.nextRegWrites.isEmpty, true)
     }
 
+    // MARK: - Pixel helpers
+
+    func testPixelDNAdvancesRow() {
+        let (cpu, _) = makeCPU(program: [0xED, 0x93])
+        cpu.HL = 0x4000 // top-left of the screen (Y=0)
+        cpu.fetchAndExecute()
+        // Y+1 = 1: the FPGA bitfield form places pixel row 1 at A10-A8 -> 0x4100.
+        XCTAssertEqual(cpu.HL, 0x4100)
+        XCTAssertEqual(cpu.PC, 2)
+    }
+
+    func testPixelADComputesScreenAddress() {
+        let (cpu, _) = makeCPU(program: [0xED, 0x94])
+        cpu.D = 64  // Y = 64 (row group 1)
+        cpu.E = 80  // X = 80
+        cpu.fetchAndExecute()
+        // addr = 0x4000 | (Y bits) | (X>>3)
+        let expected: UInt16 = 0x4000 | ((64 & 0xC0) << 5) | ((64 & 0x07) << 8) | ((64 & 0x38) << 2) | (80 >> 3)
+        XCTAssertEqual(cpu.HL, expected)
+    }
+
+    func testSetAE() {
+        let (cpu, _) = makeCPU(program: [0xED, 0x95, 0xED, 0x95])
+        cpu.E = 0
+        cpu.fetchAndExecute()
+        XCTAssertEqual(cpu.A, 0x80)
+        cpu.E = 3
+        cpu.fetchAndExecute()
+        XCTAssertEqual(cpu.A, 0x10)
+    }
+
+    func testJPC() {
+        let (cpu, _) = makeCPU(program: [0xED, 0x98])
+        // Port (C) read returns a byte that selects the 64-byte slot.
+        cpu.BC = 0xFE03 // port 0x03FE
+        cpu.PC = 0x0000
+        cpu.fetchAndExecute()
+        XCTAssertEqual(cpu.PC & 0x3F, 0, "lands on a 64-byte slot boundary")
+        XCTAssertEqual(cpu.PC & 0xC000, 0x0000, "stays in the current 16K page")
+    }
+
     // MARK: - Classic NOP when disabled
 
     func testZ80NDisabledIsNOP() {
