@@ -290,6 +290,10 @@ open class Z80 {
     public var miscDebug = false
     public var opcodeDebug = false
 
+    /// Enables the Next's extended instruction set (Z80N). Off by default so
+    /// classic Z80s treat those ED opcodes as NOPs; a Next machine sets this.
+    public var z80nEnabled = false
+
     public var isDebugging = false
     
     public var stackSize = 0
@@ -437,6 +441,13 @@ open class Z80 {
     open func readPort(lower: UInt8, upper: UInt8) -> UInt8 {
         recordAccess(.io, address: UInt16(lower))
         return hardwarePorts.performIn(lower: lower, upper: upper)
+    }
+
+    /// Writes `value` to a Next register (Z80N NEXTREG, ED 91/92). The base
+    /// Z80 has no Next registers; a Next machine overrides this to route into
+    /// its NextREG file. Declared here (not an extension) so subclasses can
+    /// override it.
+    open func nextRegWrite(_ reg: UInt8, value: UInt8) {
     }
     
 //    open func memory.write(to: UInt16, value: UInt8) async {

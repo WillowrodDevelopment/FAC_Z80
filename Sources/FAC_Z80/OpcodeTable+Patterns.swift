@@ -170,6 +170,27 @@ extension OpcodeTableSet {
                 p[op] = AccessPattern(steps: [.init(.fetch, 0), .init(.read, 4), .init(.read, 8), .init(.io, 12)])
             }
         }
+
+        // ---- Z80N (Next extended instruction set) ----
+        // 2-byte register-only ops: SWAPNIB, MIRROR, barrel shifts, MUL, ADD rr,A
+        for op in [0x23, 0x24, 0x28, 0x29, 0x2A, 0x2B, 0x2C, 0x30, 0x31, 0x32, 0x33] {
+            p[op] = AccessPattern(steps: [.init(.fetch, 0), .init(.read, 4)])
+        }
+        // 3-byte: TEST n, NEXTREG r,A (operand byte)
+        p[0x27] = AccessPattern(steps: [.init(.fetch, 0), .init(.read, 4), .init(.read, 7)])
+        p[0x92] = AccessPattern(steps: [.init(.fetch, 0), .init(.read, 4), .init(.read, 7)])
+        // 4-byte: ADD rr,nn, NEXTREG r,v (2 operand bytes)
+        for op in [0x34, 0x35, 0x36, 0x91] {
+            p[op] = AccessPattern(steps: [.init(.fetch, 0), .init(.read, 4), .init(.read, 7), .init(.read, 10)])
+        }
+        // PUSH nn: 2 operand reads + 2 stack writes
+        p[0x8A] = AccessPattern(steps: [.init(.fetch, 0), .init(.read, 4), .init(.read, 7), .init(.read, 10), .init(.write, 13), .init(.write, 16)])
+        // OUTINB: read (HL) then IO
+        p[0x90] = AccessPattern(steps: [.init(.fetch, 0), .init(.read, 4), .init(.read, 7), .init(.io, 11)])
+        // Block ops: read (HL) / read pattern, write (DE)
+        for op in [0xA4, 0xA5, 0xAC, 0xB4, 0xB7, 0xBC] {
+            p[op] = AccessPattern(steps: [.init(.fetch, 0), .init(.read, 4), .init(.read, 7), .init(.write, 11)])
+        }
         return p
     }
 

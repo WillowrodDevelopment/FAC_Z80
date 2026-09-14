@@ -381,6 +381,103 @@ extension OpcodeTableSet {
         t[0x77] = OpcodeInfo { _ in (2, 8) }
         t[0x7F] = OpcodeInfo { _ in (2, 8) }
 
+        // ---- Z80N (Next extended instruction set) ----
+        // These occupy ED opcodes that are NOPs on the classic Z80 (0x00-0x3F,
+        // 0x80-0x9F and the unallocated block slots). They execute only when
+        // `cpu.z80nEnabled` is set; otherwise they keep the classic NOP (2,12)
+        // so the oracle equivalence and classic machines are unaffected.
+        // Semantics audited against z88dk / zx_go.
+
+        // 8T, 2-byte: swap nibbles, mirror, barrel shifts/rotate, MUL, ADD rr,A
+        t[0x23] = OpcodeInfo { cpu in guard cpu.z80nEnabled else { return (2, 12) }; cpu.z80nSwapNib(); return (2, 8) }
+        t[0x24] = OpcodeInfo { cpu in guard cpu.z80nEnabled else { return (2, 12) }; cpu.z80nMirrorA(); return (2, 8) }
+        t[0x28] = OpcodeInfo { cpu in guard cpu.z80nEnabled else { return (2, 12) }; cpu.z80nBSLA(); return (2, 8) }
+        t[0x29] = OpcodeInfo { cpu in guard cpu.z80nEnabled else { return (2, 12) }; cpu.z80nBSRA(); return (2, 8) }
+        t[0x2A] = OpcodeInfo { cpu in guard cpu.z80nEnabled else { return (2, 12) }; cpu.z80nBSRL(); return (2, 8) }
+        t[0x2B] = OpcodeInfo { cpu in guard cpu.z80nEnabled else { return (2, 12) }; cpu.z80nBSRF(); return (2, 8) }
+        t[0x2C] = OpcodeInfo { cpu in guard cpu.z80nEnabled else { return (2, 12) }; cpu.z80nBRLC(); return (2, 8) }
+        t[0x30] = OpcodeInfo { cpu in guard cpu.z80nEnabled else { return (2, 12) }; cpu.z80nMulDE(); return (2, 8) }
+        t[0x31] = OpcodeInfo { cpu in guard cpu.z80nEnabled else { return (2, 12) }; cpu.z80nAddHLA(); return (2, 8) }
+        t[0x32] = OpcodeInfo { cpu in guard cpu.z80nEnabled else { return (2, 12) }; cpu.z80nAddDEA(); return (2, 8) }
+        t[0x33] = OpcodeInfo { cpu in guard cpu.z80nEnabled else { return (2, 12) }; cpu.z80nAddBCA(); return (2, 8) }
+
+        // 11T, 3-byte: TEST n
+        t[0x27] = OpcodeInfo { cpu in
+            guard cpu.z80nEnabled else { return (2, 12) }
+            cpu.z80nTest(cpu.next())
+            return (2, 11)
+        }
+
+        // 16T, 4-byte: ADD rr,nn (little-endian immediate)
+        t[0x34] = OpcodeInfo { cpu in guard cpu.z80nEnabled else { return (2, 12) }; cpu.z80nAddHLNN(); return (2, 16) }
+        t[0x35] = OpcodeInfo { cpu in guard cpu.z80nEnabled else { return (2, 12) }; cpu.z80nAddDENN(); return (2, 16) }
+        t[0x36] = OpcodeInfo { cpu in guard cpu.z80nEnabled else { return (2, 12) }; cpu.z80nAddBCNN(); return (2, 16) }
+
+        // 11T, 4-byte: PUSH nn (big-endian immediate)
+        t[0x8A] = OpcodeInfo { cpu in guard cpu.z80nEnabled else { return (2, 12) }; cpu.z80nPushNN(); return (2, 11) }
+
+        // 16T, 2-byte: OUTINB
+        t[0x90] = OpcodeInfo { cpu in
+            guard cpu.z80nEnabled else { return (2, 12) }
+            return cpu.z80nOutinb()
+        }
+
+        // NEXTREG (20T / 17T)
+        t[0x91] = OpcodeInfo { cpu in
+            guard cpu.z80nEnabled else { return (2, 12) }
+            let reg = cpu.next()
+            let val = cpu.next()
+            cpu.nextRegWrite(reg, value: val)
+            return (2, 20)
+        }
+        t[0x92] = OpcodeInfo { cpu in
+            guard cpu.z80nEnabled else { return (2, 12) }
+            let reg = cpu.next()
+            cpu.nextRegWrite(reg, value: cpu.A)
+            return (2, 17)
+        }
+
+        // Block ops: LDIX, LDWS, LDDX (16T/14T), repeats LDIRX/LDDRX/LDPIRX (21T/16T)
+        t[0xA4] = OpcodeInfo { cpu in
+            guard cpu.z80nEnabled else { return (2, 12) }
+            return cpu.z80nLdix()
+        }
+        t[0xA5] = OpcodeInfo { cpu in
+            guard cpu.z80nEnabled else { return (2, 12) }
+            return cpu.z80nLdws()
+        }
+        t[0xAC] = OpcodeInfo { cpu in
+            guard cpu.z80nEnabled else { return (2, 12) }
+            return cpu.z80nLddx()
+        }
+        t[0xB4] = OpcodeInfo { cpu in
+            guard cpu.z80nEnabled else { return (2, 12) }
+            let (m, t) = cpu.z80nLdix()
+            if cpu.BC != 0 {
+                cpu.PC = cpu.PC &- 2
+                return (m, 21)
+            }
+            return (m, t)
+        }
+        t[0xBC] = OpcodeInfo { cpu in
+            guard cpu.z80nEnabled else { return (2, 12) }
+            let (m, t) = cpu.z80nLddx()
+            if cpu.BC != 0 {
+                cpu.PC = cpu.PC &- 2
+                return (m, 21)
+            }
+            return (m, t)
+        }
+        t[0xB7] = OpcodeInfo { cpu in
+            guard cpu.z80nEnabled else { return (2, 12) }
+            let (m, t) = cpu.z80nLdpirx()
+            if cpu.BC != 0 {
+                cpu.PC = cpu.PC &- 2
+                return (m, 21)
+            }
+            return (m, t)
+        }
+
         let patterns = buildEDPatterns()
         for op in 0..<256 { t[op].accessPattern = patterns[op] }
 
