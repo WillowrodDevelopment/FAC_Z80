@@ -207,9 +207,9 @@ extension OpcodeTableSet {
             }
         }
 
-        // ---- 0xCB → DDFDCB sub-decoder (migrated table) ---- fallback
+        // ---- 0xCB → DDFDCB sub-decoder (per-M-cycle, migrated table) ----
         t[0xCB] = OpcodeInfo { cpu in
-            cpu.opCodeDDFDCBViaTable(index: index)
+            cpu.opCodeDDFDCBWithPattern(index: index)
             return (0, 0)
         }
 

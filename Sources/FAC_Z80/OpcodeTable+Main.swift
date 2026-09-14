@@ -398,7 +398,7 @@ extension OpcodeTableSet {
             let target = cpu.nextWord()
             if (cpu.F & cpu.zero) != 0 { cpu.jump(target) } else { cpu.memptr = target }
         }
-        // 0xCB → CB sub-decoder (per-M-cycle, self-accumulates) → (0,0) — isolated bring-up
+        // 0xCB → CB sub-decoder (per-M-cycle, self-accumulates) → (0,0)
         t[0xCB] = OpcodeInfo { cpu in
             cpu.opCodeCBWithPattern()
             return (0, 0)
@@ -477,9 +477,9 @@ extension OpcodeTableSet {
             cpu.memptr = target
             return (1, 10)
         }
-        // 0xDD → DD/FD sub-decoder (IX, migrated table), self-accumulates → (0,0) — fallback
+        // 0xDD → DD/FD sub-decoder (IX, per-M-cycle, self-accumulates) → (0,0)
         t[0xDD] = OpcodeInfo { cpu in
-            cpu.opCodeDDFDViaTable(index: .IX)
+            cpu.opCodeDDFDWithPattern(index: .IX)
             return (0, 0)
         }
         set(0xDE, 7) { cpu in
@@ -543,9 +543,9 @@ extension OpcodeTableSet {
             cpu.memptr = target
             return (1, 10)
         }
-        // 0xED → ED sub-decoder (migrated table), self-accumulates → (0,0) — keep fallback for boot until ED block timing verified
+        // 0xED → ED sub-decoder (per-M-cycle, self-accumulates) → (0,0)
         t[0xED] = OpcodeInfo { cpu in
-            cpu.opCodeEDViaTable()
+            cpu.opCodeEDWithPattern()
             return (0, 0)
         }
         set(0xEE, 7) { cpu in
@@ -599,9 +599,9 @@ extension OpcodeTableSet {
             cpu.memptr = target
             return (1, 10)
         }
-        // 0xFD → DD/FD sub-decoder (IY, migrated table), self-accumulates → (0,0) — fallback
+        // 0xFD → DD/FD sub-decoder (IY, per-M-cycle, self-accumulates) → (0,0)
         t[0xFD] = OpcodeInfo { cpu in
-            cpu.opCodeDDFDViaTable(index: .IY)
+            cpu.opCodeDDFDWithPattern(index: .IY)
             return (0, 0)
         }
         set(0xFE, 7) { cpu in

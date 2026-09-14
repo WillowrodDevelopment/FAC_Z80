@@ -29,6 +29,7 @@ extension Z80 {
         let info = opcodeTables.ed[Int(opPeek)]
         currentInstructionPattern = info.accessPattern
         instructionAccessIndex = 1
+        let _ = next() // Consume the ED operand byte (advances PC; pattern step[1] @4)
         let (m, t) = info.execute(self)
         accumulate(m: m, t: t - instructionLastOffset)
     }
@@ -54,6 +55,7 @@ extension Z80 {
         let info = table[Int(opPeek)]
         currentInstructionPattern = info.accessPattern
         instructionAccessIndex = 1
+        let _ = next() // Consume the DD/FD operand byte (pattern step[1] @4)
         let (m, t) = info.execute(self)
         accumulate(m: m, t: t - instructionLastOffset)
     }
