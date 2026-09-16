@@ -50,6 +50,13 @@ open class Z80 {
     /// this recorder when one is attached.
     public weak var accessRecorder: MemoryAccessRecorder?
 
+    /// True when the per-access recording wrapper must do work: a recorder or
+    /// access pattern is active, or a machine has wired ULA contention. When
+    /// false (the common emulation case) the wrapper forwards straight through.
+    var needsAccessRecording: Bool {
+        accessRecorder != nil || contention != nil || currentInstructionPattern != nil
+    }
+
     /// Optional bus-contention model (ULA). When set, wait states are inserted
     /// into the CPU clock at each contended memory access.
     public weak var contention: BusContention?
@@ -64,6 +71,11 @@ open class Z80 {
     /// Reports an access to the recorder at its per-M-cycle frame position, and
     /// applies any bus-contention wait state by advancing the CPU clock.
     func recordAccess(_ kind: MemAccessKind, address: UInt16) {
+        // Fast path: with no recorder, no pattern and no contention this hook
+        // is pure overhead — the common case in accelerated Next emulation.
+        if currentInstructionPattern == nil, accessRecorder == nil, contention == nil {
+            return
+        }
         if let pattern = currentInstructionPattern,
            instructionAccessIndex < pattern.steps.count {
             let step = pattern.steps[instructionAccessIndex]
@@ -74,12 +86,11 @@ open class Z80 {
             instructionLastOffset = step.tStateOffset
             instructionAccessIndex += 1
         }
-        // The per-M-cycle clock can run past the frame boundary mid-instruction
-        // (accumulate wraps it at the end); the ULA model expects a frame-relative
-        // position, so wrap it here.
-        let frameT = currentFrameTState % frameTStates
         if let contention {
-            let delay = contention.delay(beginningAt: frameT, address: address)
+            // Contention samples the ULA cadence, which is fixed to the video
+            // frame even when the CPU runs accelerated (wraps 8×/frame at 28MHz).
+            let videoT = currentFrameTState % videoFrameTStates
+            let delay = contention.delay(beginningAt: videoT, address: address)
             if delay > 0 {
                 tStates += delay
                 instructionDelay += delay
@@ -370,6 +381,12 @@ open class Z80 {
     /// (228 t-states × 311 lines). FAC_ULA's ULATimingProfile is the source of
     /// truth for these numbers when a machine adopts it.
     open var frameTStates: Int { tStatesPerFrame }
+
+    /// Frame budget the ULA/video timing runs on. The CPU frame can be longer
+    /// than the video frame when the machine runs an accelerated CPU clock
+    /// (e.g. the Next at 28MHz executes 8× the t-states per 50Hz video frame);
+    /// contention and ULA sampling must wrap against the video frame.
+    open var videoFrameTStates: Int { frameTStates }
 
     /// Synchronously accumulates cycle counts and R refresh for an instruction.
     /// Sets `frameBoundaryHit` when a frame's t-state budget is consumed so the

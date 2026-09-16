@@ -62,24 +62,32 @@ final class RecordingMemoryDelegate: MemoryDelegate {
     }
 
     func write(to address: UInt16, value: UInt8) {
-        cpu?.recordAccess(.write, address: address)
+        if cpu?.needsAccessRecording == true {
+            cpu?.recordAccess(.write, address: address)
+        }
         wrapped.write(to: address, value: value)
     }
 
     func read(from address: UInt16) -> UInt8 {
-        cpu?.recordAccess(.read, address: address)
+        if cpu?.needsAccessRecording == true {
+            cpu?.recordAccess(.read, address: address)
+        }
         return wrapped.read(from: address)
     }
 
     func writeWord(to address: UInt16, value: UInt16) {
-        cpu?.recordAccess(.write, address: address)
-        cpu?.recordAccess(.write, address: address &+ 1)
+        if cpu?.needsAccessRecording == true {
+            cpu?.recordAccess(.write, address: address)
+            cpu?.recordAccess(.write, address: address &+ 1)
+        }
         wrapped.writeWord(to: address, value: value)
     }
 
     func readWord(from address: UInt16) -> UInt16 {
-        cpu?.recordAccess(.read, address: address)
-        cpu?.recordAccess(.read, address: address &+ 1)
+        if cpu?.needsAccessRecording == true {
+            cpu?.recordAccess(.read, address: address)
+            cpu?.recordAccess(.read, address: address &+ 1)
+        }
         return wrapped.readWord(from: address)
     }
 
