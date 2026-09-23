@@ -334,9 +334,12 @@ open class Z80 {
     // Overrideable functions
     
     public var lastPCValues: [UInt16] = []
-    
+    /// The active emulation loop task, tracked so reboots can stop the old
+    /// loop before resetting state (avoiding two racing process loops).
+    public private(set) var processTask: Task<Void, Never>?
+
     public func startProcess() {
-        Task {
+        processTask = Task {
             await process()
         }
     }
